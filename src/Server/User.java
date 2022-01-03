@@ -4,8 +4,10 @@ import java.net.Socket;
 import java.util.*;
 
 public class User {
+    private String name;
     private final String UID;
     private Socket socket;
+    private Worker worker;
     private String secretKey;
     private long sessionTime;
     private String status;
@@ -21,12 +23,28 @@ public class User {
         dateList = new ArrayList<>();
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Socket getSocket() {
         return socket;
     }
 
     public void setSocket(Socket socket) {
         this.socket = socket;
+    }
+
+    public Worker getWorker() {
+        return worker;
+    }
+
+    public void setWorker(Worker worker) {
+        this.worker = worker;
     }
 
     public String getUID() {

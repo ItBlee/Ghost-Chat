@@ -1,26 +1,31 @@
 package Server;
 
 import Security.AES_Encryptor;
-import Services.StringUtils;
-import com.google.gson.JsonParser;
+import Services.DTO;
+import Services.History;
+import Services.Tags;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
 
 public class Worker extends Thread implements Runnable{
     protected User user;
+    protected User pairUser;
     protected Socket socket;
     private final BufferedReader in;
     private final BufferedWriter out;
     private final String IP;
     private final String fromIP;
+    private boolean isPaired = false;
 
-    private final ExecutorService formatExecutors = Executors.newSingleThreadExecutor();;
+    private ServerPair finder;
+
+    //Danh sách worker đã từ chối ghép cặp
+    private final Vector<User> denied = new Vector<>();
+    //Danh sách lịch sử chat với mỗi element là danh sách chat với worker nào đó
+    private final HashMap<User, ArrayList<History>> histories = new HashMap<>();
 
     /**
      * Tạo ra một thread mới để kết nối và xử lý yêu cầu từ phía Client
@@ -34,6 +39,69 @@ public class Worker extends Thread implements Runnable{
                 .getHostAddress(); //in địa chỉ IP từ InetAddress của client kết nối tới
         fromIP = IP + ":" + clientSocket.getPort(); //in port của client kết nối tới từ socket
                                                     //vd: 127.0.0.1:5013
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public User getPair() {
+        return pairUser;
+    }
+
+    public Vector<User> getDenied() {
+        return denied;
+    }
+
+    public HashMap<User, ArrayList<History>> getHistories() {
+        return histories;
+    }
+
+    //Set đối tượng ghép cặp
+    public void pairWith(User pair) {
+        this.pairUser = pair;
+    }
+
+    //Khóa đối tượng muốn bắt cặp lại tránh xung đốt
+    public void lockPair() {
+        if (!isPaired)
+            isPaired = true;
+    }
+
+    //Mở khóa đối tượng
+    public void unlockPair() {
+        if (isPaired)
+            isPaired = false;
+    }
+
+    //Kiểm tra đối tượng có bị khóa không
+    public boolean isPaired() {
+        return isPaired;
+    }
+
+    //Loại bỏ ghép cặp khi có 1 bên thoát chat
+    public void breakPair() throws IOException {
+        getPair().getWorker().pairWith(null);
+        getPair().getWorker().unlockPair();
+        getPair().getWorker().responseHandle(new DTO(Tags.PAIR_LEFT_HEADER, null));
+        pairWith(null);
+        unlockPair();
+        responseHandle(new DTO(Tags.BREAK_PAIR_HEADER, null));
+    }
+
+    //Thực hiện ghép cặp khi cả 2 bên đồng ý
+    public void doPair(User withUser) throws IOException {
+        Server.queue.remove(withUser);
+        lockPair();
+        pairWith(withUser);
+        withUser.getWorker().lockPair();
+        withUser.getWorker().pairWith(getUser());
+        DTO dto = new DTO(Tags.PAIRED_CHAT_HEADER, null);
+        dto.setData(getName());
+        responseHandle(dto);
+        dto.setData(withUser.getName());
+        withUser.getWorker().responseHandle(dto);
+        System.out.println("Paired " + getUser().getName() + " with " + withUser.getName());
     }
 
     /**
@@ -52,39 +120,15 @@ public class Worker extends Thread implements Runnable{
                 try {
                     //Chờ thông điệp từ Client rồi xử lý
                     String line = receive();
-                    if (line == null || line.isEmpty() || line.isBlank())
-                        continue;
-
-                    System.out.println("Server get: " + line
-                            + " from " + fromIP
-                            + " - ID: " + user.getUID());
-                    //Vòng lặp sẽ ngừng khi Client gửi lệnh "bye"
-                    if (line.equals(Server.BREAK_CONNECT_KEY)) {
+                    //Vòng lặp sẽ ngừng khi Client gửi lệnh "Break_Connect"
+                    if (line.equals(Tags.BREAK_CONNECT_HEADER))
                         break;
-                    }
-
-                    if (line.equalsIgnoreCase("renewed")) {
-                        reloadUser(); //đọc lại user từ list user.
-                        recheckIfTargetAtManager(user);//For server manager (bỏ qua)
-                        continue;
-                    }
-
-                    if (user.getSessionTime() == -1) {
-                        System.out.println("Secret Key of " + user.getUID() + " expired !");
-                        send("Expired");
-                        continue;
-                    }
 
                     //Xử lý dữ liệu bằng class ServerHandler method responseHandle
-                    ClientDataPacket packet = requestHandle(line, user.getSecretKey());
-                    line = responseHandle(packet, user.getSecretKey());
-
-                    // Server gửi phản hồi ngược lại cho client (chuỗi đảo ngược)
-                    send(line);
-
-                    System.out.println("Server response: " + line
-                            + " to " + fromIP
-                            + " - ID: " + user.getUID());
+                    DTO packet = requestHandle(line);
+                    if (packet == null)
+                        continue;
+                    responseHandle(packet);
                 } catch (Exception e) {
                     //Có exception thì break vòng lặp để close socket.
                     break;
@@ -134,6 +178,7 @@ public class Worker extends Thread implements Runnable{
 
                     user = u;
                     user.setSocket(socket);
+                    user.setWorker(Worker.this);
                     user.setStatus("online");
                     if (user.getSessionTime() != -1)
                         verifyStatus = "Verified";
@@ -151,7 +196,16 @@ public class Worker extends Thread implements Runnable{
         recheckIfTargetAtManager(user);
     }
 
-    public void reloadUser() {
+    //Hàm kiểm tra tên có tồn tại chưa
+    public boolean checkName(String name) {
+        for (User user : Server.users) {
+            if (name.equalsIgnoreCase(user.getName()))
+                return false;
+        }
+        return true;
+    }
+
+    private void reloadUser() {
         //check trong list user.
         for (User u : Server.users) {
             if (u.getUID().equals(user.getUID())) {
@@ -179,16 +233,14 @@ public class Worker extends Thread implements Runnable{
         out.flush();
     }
 
-    public String receive() throws IOException, NullPointerException {
-        return in.readLine();
+    public void sendToPair(String data) throws IOException, NullPointerException {
+        getPair().getWorker().out.write(data);
+        getPair().getWorker().out.newLine();
+        getPair().getWorker().out.flush();
     }
 
-    public String receiveImage(String bytesImage) throws IOException, NullPointerException {
-        String path = Server.SERVER_SIDE_PATH + user.getUID() + ".jpg";
-        byte[] imageAr = StringUtils.getBytesFromString(bytesImage);
-        BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageAr));
-        ImageIO.write(image, "jpg", new File(path));
-        return path;
+    public String receive() throws IOException, NullPointerException {
+        return in.readLine();
     }
 
     public void close() throws IOException, NullPointerException {
@@ -209,38 +261,87 @@ public class Worker extends Thread implements Runnable{
      * @param data dữ liệu từ client đã bị mã hóa
      * @return ClientDataPacket - Gói dữ liệu Client
      */
-    public ClientDataPacket requestHandle(String data, String secretKey) {
-        String decryptJson = AES_Encryptor.decrypt(data, secretKey);
-        user.addRequestList(JsonParser.parseString(decryptJson).toString());
+    private DTO requestHandle(String data) throws IOException {
+        if (data == null || data.isEmpty() || data.isBlank())
+            return null;
+
+        System.out.println("Server get: " + data
+                + " from " + fromIP
+                + " - ID: " + user.getUID());
+
+        if (data.equalsIgnoreCase(Tags.RENEW_USER_SESSION)) {
+            reloadUser(); //đọc lại user từ list user.
+            recheckIfTargetAtManager(user);//For server manager (bỏ qua)
+            return null;
+        }
+
+        if (user.getSessionTime() == Tags.SESSION_EXPIRED_TIME) {
+            System.out.println("Secret Key of " + user.getUID() + " expired !");
+            return new DTO(Tags.EXPIRED_HEADER,null);
+        }
+
+        if (getUser().getName() == null) {
+            DTO dto = new DTO(Tags.NAME_CHECK_HEADER,null);
+            dto.setData(String.valueOf(checkName(data)));
+            return dto;
+        }
+
+        String decryptJson = AES_Encryptor.decrypt(data, getUser().getSecretKey()); //giả mã bằng secret key
+        user.addRequestList(Services.JsonParser.unpack(decryptJson).toString());
         user.addDateList(LocalDateTime.now().toString());
-        return ClientDataPacket.unpack(decryptJson); //giả mã bằng secret key
+        return Services.JsonParser.unpack(decryptJson);
     }
 
     /**
      * Hàm dùng để xử lý dữ liệu trả về cho client
      * @param dataPacket Gói dự liệu client
-     * @return String - dữ liệu đã qua xử lý
      */
-    public String responseHandle(ClientDataPacket dataPacket, String secretKey) throws IOException, NullPointerException, InterruptedException {
-        String description = dataPacket.getDescription();
-        String format = "CODE";
-        String output = "RESULT";
-        String statusCode = "000";
-        String memory = "000";
-        String cpuTime = "0ms";
+    public void responseHandle(DTO dataPacket) throws IOException, NullPointerException {
+        boolean isForPair = false;
+        String header = dataPacket.getHeader();
+        String sender = getUser().getUID();
+        String receiver = "null";
+        String data = "null";
 
-        switch (dataPacket.getDescription()) { //ĐỌc HEADER
-            case "IMAGE":
+        switch (dataPacket.getHeader()) { //ĐỌc HEADER
+            case Tags.MESSAGE_HEADER:
+                isForPair = true;
+                receiver = getPair().getUID();
+                data = dataPacket.getData();
                 break;
 
-            case "COMPILE":
+            case Tags.NAME_CHECK_HEADER:
+                receiver = sender;
+                data = dataPacket.getData();
                 break;
 
-            case "FORMAT":
+            case Tags.FIND_CHAT_HEADER:
+                return;
+
+            case Tags.EXPIRED_HEADER:
+                receiver = sender;
+                data = Tags.EXPIRED_HEADER;
+                break;
         }
 
-        ServerDataPacket serverPacket = new ServerDataPacket(description, format, output, statusCode, memory, cpuTime);
-        user.addResponseList(JsonParser.parseString(serverPacket.pack()).toString());
-        return AES_Encryptor.encrypt(serverPacket.pack(), secretKey); //mã hóa bằng secret key trước khi gửi
+        DTO serverPacket = new DTO(header, sender);
+        serverPacket.setReceiver(receiver);
+        serverPacket.setData(data);
+        serverPacket.setCreatedDate(LocalDateTime.now().toString());
+        user.addResponseList(Services.JsonParser.pack(serverPacket));
+        String output = AES_Encryptor.encrypt(Services.JsonParser.pack(serverPacket), getUser().getSecretKey()); //mã hóa bằng secret key trước khi gửi
+
+        if (isForPair) {
+            sendToPair(output);
+            System.out.println("Server response: " + output
+                    + " from " + fromIP
+                    + " - ID: " + getUser().getUID() + " to " + getPair().getUID());
+        } else {
+            send(output);
+            System.out.println("Server response: " + output
+                    + " to " + fromIP
+                    + " - ID: " + getPair().getUID());
+        }
+
     }
 }

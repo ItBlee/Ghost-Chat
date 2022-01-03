@@ -34,6 +34,7 @@ public class Server {
     public static Thread accepter;
     public static Thread verifier;
     public static final Set<User> users = new LinkedHashSet<>();
+    public static final Set<User> queue = new LinkedHashSet<>();
     public static final HashMap<String, String> banList = new HashMap<>();
 
     public static Thread timer;
@@ -42,12 +43,11 @@ public class Server {
 
     public static ExecutorService sslExecutor;
     public static ThreadPoolExecutor executor;
-    public static final int EXECUTOR_CORE = 2;          //Số thread một lúc
-    public static final int EXECUTOR_MAX = 5;           //số thread tối đa khi server quá tải
+    public static final int EXECUTOR_CORE = 3;          //Số thread một lúc
+    public static final int EXECUTOR_MAX = 3;           //số thread tối đa khi server quá tải
     public static final int EXECUTOR_ALIVE_TIME = 1;    //thời gian một thread được sống nếu không làm gì
     public static final int EXECUTOR_CAPACITY = 10;     //Số lượng hàng chờ có thể chứa của executor
 
-    public static final String BREAK_CONNECT_KEY = "bye";
     private static final String KEY_STORE_NAME = "myKeyStore.jks";
     public static final String SERVER_SIDE_PATH = "workspace/Server.Side/";
     private static final String KEY_STORE_ALIAS = "mykey";
@@ -64,13 +64,10 @@ public class Server {
         and includes functionality for data encryption, server authentication, message integrity,
         and optional client authentication.*/
         Security.addProvider(new Provider());
-
         //specifing the keystore file which contains the certificate/public key and the private key
         System.setProperty("javax.net.ssl.keyStore", SERVER_SIDE_PATH + KEY_STORE_NAME);
-
         //specifing the password of the keystore file
         System.setProperty("javax.net.ssl.keyStorePassword", keyStore_password);
-
         //This optional and it is just to show the dump of the details of the handshake process
         if (SSL_DEBUG_ENABLE)
             System.setProperty("javax.net.debug","all");
@@ -84,10 +81,8 @@ public class Server {
         getKey();
         //SSLSSocketFactory thiết lập the ssl context and tạo SSLSocket
         SSLServerSocketFactory sslServerSocketfactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-
         //Tạo SSLSocket bằng SSLServerFactory đã thiết lập ssl context và kết nối tới server
         sslServerSocket = (SSLServerSocket) sslServerSocketfactory.createServerSocket(VERIFY_PORT);
-
         serverSocket = new ServerSocket(MAIN_PORT);
     }
 

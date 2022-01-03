@@ -31,8 +31,8 @@ public class JsonParser {
         JsonObject packet = com.google.gson.JsonParser.parseString(json).getAsJsonObject();
         DTO dto = new DTO(
                 packet.get("header").getAsString(),
-                packet.get("sender").getAsString(),
-                packet.get("receiver").getAsString());
+                packet.get("sender").getAsString());
+        dto.setReceiver(packet.get("receiver").getAsString());
         dto.setData(packet.get("data").getAsString());
         dto.setCreatedDate(packet.get("createdDate").getAsString());
         return dto;
