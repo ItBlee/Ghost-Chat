@@ -6,6 +6,8 @@ import com.formdev.flatlaf.FlatIntelliJLaf;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.font.TextAttribute;
+import java.util.Map;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.DocumentEvent;
@@ -14,7 +16,7 @@ import javax.swing.event.DocumentListener;
 /**
  * @author Tran Long Tuan Vu
  */
-public class ClientGUI extends JFrame {
+public class ClientGUI extends MoveJFrame {
 	private int verticalScrollBarMaximumValue;
 	private static final int LIMIT_MESSAGE_LINE = 40;
 	private static final int LIMIT_INPUT_LINE = 30;
@@ -355,18 +357,32 @@ public class ClientGUI extends JFrame {
 
 	public void appendReceive(String message) {
 		Color bg = new Color(238,241,249);
+		Font font = new Font("Arial", Font.PLAIN, 16);
 		Color fontColor = new Color(0, 0, 0);
 		int fontAlign = SwingConstants.LEFT;
 		int align = FlowLayout.LEFT;
-		appendMessageToBox(message, bg, fontColor, fontAlign, align);
+		appendMessageToBox(message, bg, font, fontColor, fontAlign, align);
 	}
 
 	public void appendSend(String message) {
 		Color bg = new Color(1, 178, 254);
+		Font font = new Font("Arial", Font.PLAIN, 16);
 		Color fontColor = Color.white;
 		int fontAlign = SwingConstants.RIGHT;
 		int align = FlowLayout.RIGHT;
-		appendMessageToBox(message, bg, fontColor, fontAlign, align);
+		appendMessageToBox(message, bg, font, fontColor, fontAlign, align);
+	}
+
+	public void appendSendFail(String message) {
+		Color bg = new Color(252, 136, 136);
+		Font font = new Font("Arial", Font.PLAIN, 16);
+		Map attributes = font.getAttributes();
+		attributes.put(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
+		Font newFont = new Font(attributes);
+		Color fontColor = Color.lightGray;
+		int fontAlign = SwingConstants.RIGHT;
+		int align = FlowLayout.RIGHT;
+		appendMessageToBox(message, bg, newFont, fontColor, fontAlign, align);
 	}
 
 	public void appendAlert(String message, boolean isError) {
@@ -374,17 +390,24 @@ public class ClientGUI extends JFrame {
 		if (isError)
 			bg = new Color(250, 115, 115);
 		else bg = new Color(1, 254, 149);
+		Font font = new Font("Arial", Font.PLAIN, 16);
 		Color fontColor = Color.white;
 		int fontAlign = SwingConstants.CENTER;
 		int align = FlowLayout.CENTER;
-		appendMessageToBox(message, bg, fontColor, fontAlign, align);
+		appendMessageToBox(message, bg, font, fontColor, fontAlign, align);
 	}
 
+	@SuppressWarnings("ConstantConditions")
 	public void appendTimeLine(String time) {
-
+		Color bg = null;
+		Font font = new Font("Arial", Font.PLAIN, 12);
+		Color fontColor = Color.BLACK;
+		int fontAlign = SwingConstants.CENTER;
+		int align = FlowLayout.CENTER;
+		appendMessageToBox(time, bg, font, fontColor, fontAlign, align);
 	}
 
-	private void appendMessageToBox(String message, Color bg, Color fontColor, int fontAlign, int align) {
+	private void appendMessageToBox(String message, Color bg, Font font, Color fontColor, int fontAlign, int align) {
 		message = StringUtils.applyWrapForButton(message);
 
 		JPanel panel = new JPanel(new FlowLayout(align));
@@ -392,24 +415,20 @@ public class ClientGUI extends JFrame {
 		panel.setOpaque(true);
 
 		JButton lbChat = new JButton(message);
-		lbChat.setFont(new Font("Arial", Font.PLAIN, 16));
+		lbChat.setFont(font);
 		lbChat.setForeground(fontColor);
 		lbChat.setFocusPainted(false);
-		if (message.length() > LIMIT_MESSAGE_LINE*2)
+		if (message.length() > LIMIT_MESSAGE_LINE * 2)
 			lbChat.setBorder(new EmptyBorder(10,10,10,10));
 		else lbChat.setBorderPainted(false);
 		lbChat.setMargin(new Insets(10, 10, 10, 10));
 		lbChat.setBackground(bg);
 		lbChat.setOpaque(true);
 		lbChat.setHorizontalAlignment(fontAlign);
+
 		JLabel time = new JLabel("10:34");
 		time.setVisible(false);
-		lbChat.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				time.setVisible(!time.isVisible());
-			}
-		});
+		lbChat.addActionListener(e -> time.setVisible(!time.isVisible()));
 
 		if (align == FlowLayout.RIGHT)
 			panel.add(time);
@@ -434,6 +453,7 @@ public class ClientGUI extends JFrame {
 		frame.setVisible(true);
 		frame.appendReceive("hello");
 		frame.appendSend("Ngu");
+		frame.appendTimeLine("10:32");
 	}
 
 	private JLayeredPane loginPane;
