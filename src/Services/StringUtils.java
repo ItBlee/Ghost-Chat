@@ -15,7 +15,7 @@ public class StringUtils {
         return WordWrap.from(text).maxWidth(40).insertHyphens(true).wrap();
     }
 
-    public static String applyWrapForButton(String text) {
+    public static String applyWrapForGUI(String text) {
         return "<html>" + wrapText(text).replace("\n","<br/>") + "</html>";
     }
 

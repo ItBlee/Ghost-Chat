@@ -160,7 +160,7 @@ public class ClientGUI extends MoveJFrame {
 			loginPane.add(inpuNametPanel, JLayeredPane.DEFAULT_LAYER);
 			inpuNametPanel.setBounds(0, 400, 335, 320);
 		}
-		//contentPane.add(loginPane, "card1");
+		contentPane.add(loginPane, "card1");
 
 		//======== chatPane ========
 		{
@@ -350,7 +350,7 @@ public class ClientGUI extends MoveJFrame {
 			chatPane.add(scrollPane2, JLayeredPane.DEFAULT_LAYER);
 			scrollPane2.setBounds(-2, 72, 340, 550);
 		}
-		contentPane.add(chatPane, "card1");
+		//contentPane.add(chatPane, "card2");
 		setSize(350, 735);
 		setLocationRelativeTo(getOwner());
 	}
@@ -408,7 +408,7 @@ public class ClientGUI extends MoveJFrame {
 	}
 
 	private void appendMessageToBox(String message, Color bg, Font font, Color fontColor, int fontAlign, int align) {
-		message = StringUtils.applyWrapForButton(message);
+		message = StringUtils.applyWrapForGUI(message);
 
 		JPanel panel = new JPanel(new FlowLayout(align));
 		panel.setBackground(new Color(249, 253, 255));
@@ -451,9 +451,9 @@ public class ClientGUI extends MoveJFrame {
 
 		ClientGUI frame = new ClientGUI();
 		frame.setVisible(true);
-		frame.appendReceive("hello");
-		frame.appendSend("Ngu");
-		frame.appendTimeLine("10:32");
+
+		Dialog dialog = Dialog.newAlertDialog(frame, "Server Busy !");
+		dialog.setVisible(true);
 	}
 
 	private JLayeredPane loginPane;
