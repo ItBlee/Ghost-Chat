@@ -1,5 +1,6 @@
 package Services;
 
+import Server.User;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -29,12 +30,23 @@ public class JsonParser {
      */
     public static DTO unpack(String json) {
         JsonObject packet = com.google.gson.JsonParser.parseString(json).getAsJsonObject();
-        DTO dto = new DTO(
-                packet.get("header").getAsString(),
-                packet.get("sender").getAsString());
+        DTO dto = new DTO(packet.get("header").getAsString());
+        dto.setSender(packet.get("sender").getAsString());
         dto.setReceiver(packet.get("receiver").getAsString());
         dto.setData(packet.get("data").getAsString());
         dto.setCreatedDate(packet.get("createdDate").getAsString());
         return dto;
+    }
+
+    public static String getUserInfo(User user) {
+        JsonObject packet = new JsonObject();
+        packet.addProperty("name", user.getName());
+        packet.addProperty("uid", user.getUID());
+        packet.addProperty("status", user.getStatus());
+        packet.addProperty("modifiedDate", user.getModifiedDate());
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        JsonElement je = com.google.gson.JsonParser.parseString(packet.toString());
+        return gson.toJson(je);
     }
 }

@@ -367,7 +367,6 @@ public class ServerManagerGUI extends JFrame {
                         break;
 
                     case "#SPENT":
-                        jLabel1.setText("API: " + Compiler.getCreditSpent() + " / 200");
                         break;
 
                     default:
@@ -412,7 +411,7 @@ public class ServerManagerGUI extends JFrame {
 
     private void sendChat(String message, User to) {
         try {
-            String packet = Server.messageHandle("CHAT", message, to);
+            String packet = Server.messageHandle(message, to);
             Socket socket = to.getSocket();
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             out.write(packet);

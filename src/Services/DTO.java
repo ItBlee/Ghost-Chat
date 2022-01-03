@@ -4,14 +4,13 @@ import java.util.Objects;
 
 public class DTO {
     private final String header;
-    private final String sender;
+    private String sender;
     private String receiver;
     private String data;
     private String createdDate;
 
-    public DTO(String header, String sender) {
+    public DTO(String header) {
         this.header = header;
-        this.sender = sender;
     }
 
     public String getHeader() {
@@ -20,6 +19,10 @@ public class DTO {
 
     public String getSender() {
         return sender;
+    }
+
+    public void setSender(String sender) {
+        this.sender = sender;
     }
 
     public String getReceiver() {

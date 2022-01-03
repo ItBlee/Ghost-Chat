@@ -1,7 +1,8 @@
 package Server;
 
 import Services.DTO;
-import Services.Tags;
+import Services.Header;
+import Services.JsonParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Vector;
 
-public class ServerPair implements Runnable{
+public class ServerPair extends Thread implements Runnable{
     private final Worker parent;
     private boolean isAllowInvite = false;
     private String replyInvite = "";
@@ -47,7 +48,7 @@ public class ServerPair implements Runnable{
                 }
 
                 //Gửi lệnh "invite_chat_{pairName}" hỏi người dùng có muốn ghép không
-                DTO dto = new DTO(Tags.INVITE_CHAT_HEADER, null);
+                DTO dto = new DTO(Header.INVITE_CHAT_HEADER);
                 dto.setData(randomUser.getName());
                 parent.responseHandle(dto);
                 while (!isAllowInvite)
@@ -56,14 +57,14 @@ public class ServerPair implements Runnable{
                 if (replyInvite.equals("true")) {
                     //Nếu người đó đã ghép với người khác thì báo lại "invite_chat_{pairName}_fail"
                     if (randomUser.getWorker().isPaired()) {
-                        dto = new DTO(Tags.INVITE_CHAT_HEADER, null);
+                        dto = new DTO(Header.INVITE_CHAT_HEADER);
                         dto.setData(randomUser.getName());
                         parent.responseHandle(dto);
                         continue;
                     }
 
                     //Còn được thì gửi lệnh "accept_chat_myName" đến cho người muốn ghép để hỏi có đồng ý ghép với mình không.
-                    dto = new DTO(Tags.CONFIRM_CHAT_HEADER, null);
+                    dto = new DTO(Header.CONFIRM_CHAT_HEADER);
                     dto.setData(randomUser.getName());
                     parent.responseHandle(dto);
                     while (!isConfirmInvite)
@@ -73,6 +74,11 @@ public class ServerPair implements Runnable{
                         //Thực hiện ghép cặp
                         parent.doPair(randomUser);
                         loadHistoryChat(randomUser);
+                        DTO infoDTO = new DTO(Header.USER_INFO_HEADER);
+                        infoDTO.setData(JsonParser.getUserInfo(parent.getUser()));
+                        parent.responseHandle(infoDTO);
+                        infoDTO.setData(JsonParser.getUserInfo(randomUser));
+                        randomUser.getWorker().responseHandle(infoDTO);
                         break;
                     }
                     else {
@@ -114,7 +120,7 @@ public class ServerPair implements Runnable{
 
         Gson gson = new GsonBuilder().create();
         JsonArray jsonArray = gson.toJsonTree(parent.getHistories()).getAsJsonArray();
-        DTO dto = new DTO(Tags.HISTORY_RECOVERY_HEADER, null);
+        DTO dto = new DTO(Header.HISTORY_RECOVERY_HEADER);
         dto.setData(jsonArray.toString());
         parent.responseHandle(dto);
     }

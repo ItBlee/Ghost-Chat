@@ -3,7 +3,7 @@ package Server;
 import Security.AES_Encryptor;
 import Services.DTO;
 import Services.History;
-import Services.Tags;
+import Services.Header;
 
 import java.io.*;
 import java.net.Socket;
@@ -39,6 +39,11 @@ public class Worker extends Thread implements Runnable{
                 .getHostAddress(); //in địa chỉ IP từ InetAddress của client kết nối tới
         fromIP = IP + ":" + clientSocket.getPort(); //in port của client kết nối tới từ socket
                                                     //vd: 127.0.0.1:5013
+
+        if (Server.users.size() + 1 > Server.EXECUTOR_MAX) {
+            DTO dto = new DTO(Header.SERVER_BUSY_HEADER);
+            responseHandle(dto);
+        }
     }
 
     public User getUser() {
@@ -83,10 +88,10 @@ public class Worker extends Thread implements Runnable{
     public void breakPair() throws IOException {
         getPair().getWorker().pairWith(null);
         getPair().getWorker().unlockPair();
-        getPair().getWorker().responseHandle(new DTO(Tags.PAIR_LEFT_HEADER, null));
+        getPair().getWorker().responseHandle(new DTO(Header.PAIR_LEFT_HEADER));
         pairWith(null);
         unlockPair();
-        responseHandle(new DTO(Tags.BREAK_PAIR_HEADER, null));
+        finder = null;
     }
 
     //Thực hiện ghép cặp khi cả 2 bên đồng ý
@@ -96,7 +101,7 @@ public class Worker extends Thread implements Runnable{
         pairWith(withUser);
         withUser.getWorker().lockPair();
         withUser.getWorker().pairWith(getUser());
-        DTO dto = new DTO(Tags.PAIRED_CHAT_HEADER, null);
+        DTO dto = new DTO(Header.PAIRED_CHAT_HEADER);
         dto.setData(getName());
         responseHandle(dto);
         dto.setData(withUser.getName());
@@ -121,7 +126,7 @@ public class Worker extends Thread implements Runnable{
                     //Chờ thông điệp từ Client rồi xử lý
                     String line = receive();
                     //Vòng lặp sẽ ngừng khi Client gửi lệnh "Break_Connect"
-                    if (line.equals(Tags.BREAK_CONNECT_HEADER))
+                    if (line.equals(Header.BREAK_CONNECT_HEADER))
                         break;
 
                     //Xử lý dữ liệu bằng class ServerHandler method responseHandle
@@ -269,19 +274,19 @@ public class Worker extends Thread implements Runnable{
                 + " from " + fromIP
                 + " - ID: " + user.getUID());
 
-        if (data.equalsIgnoreCase(Tags.RENEW_USER_SESSION)) {
+        if (data.equalsIgnoreCase(Server.RENEW_USER_SESSION)) {
             reloadUser(); //đọc lại user từ list user.
             recheckIfTargetAtManager(user);//For server manager (bỏ qua)
             return null;
         }
 
-        if (user.getSessionTime() == Tags.SESSION_EXPIRED_TIME) {
+        if (user.getSessionTime() == Server.SESSION_EXPIRED_TIME) {
             System.out.println("Secret Key of " + user.getUID() + " expired !");
-            return new DTO(Tags.EXPIRED_HEADER,null);
+            return new DTO(Header.EXPIRED_HEADER);
         }
 
         if (getUser().getName() == null) {
-            DTO dto = new DTO(Tags.NAME_CHECK_HEADER,null);
+            DTO dto = new DTO(Header.NAME_CHECK_HEADER);
             dto.setData(String.valueOf(checkName(data)));
             return dto;
         }
@@ -289,7 +294,34 @@ public class Worker extends Thread implements Runnable{
         String decryptJson = AES_Encryptor.decrypt(data, getUser().getSecretKey()); //giả mã bằng secret key
         user.addRequestList(Services.JsonParser.unpack(decryptJson).toString());
         user.addDateList(LocalDateTime.now().toString());
-        return Services.JsonParser.unpack(decryptJson);
+        DTO dto = Services.JsonParser.unpack(decryptJson);
+        switch (dto.getHeader()) {
+            case Header.FIND_CHAT_HEADER:
+                if (finder == null) {
+                    finder = new ServerPair(Worker.this);
+                    finder.start();
+                }
+                break;
+
+            case Header.INVITE_CHAT_HEADER:
+                if (finder != null)
+                    finder.replyInvite(dto.getData());
+                break;
+
+            case Header.CONFIRM_CHAT_HEADER:
+                if (finder != null)
+                    finder.replyConfirm(dto.getData());
+                break;
+
+            case Header.BREAK_PAIR_HEADER:
+                if (isPaired())
+                    breakPair();
+                break;
+
+            default:
+                return null;
+        }
+        return dto;
     }
 
     /**
@@ -300,31 +332,24 @@ public class Worker extends Thread implements Runnable{
         boolean isForPair = false;
         String header = dataPacket.getHeader();
         String sender = getUser().getUID();
-        String receiver = "null";
-        String data = "null";
+        String receiver;
+        String data;
 
         switch (dataPacket.getHeader()) { //ĐỌc HEADER
-            case Tags.MESSAGE_HEADER:
+            case Header.MESSAGE_HEADER:
                 isForPair = true;
                 receiver = getPair().getUID();
                 data = dataPacket.getData();
                 break;
 
-            case Tags.NAME_CHECK_HEADER:
+            default:
                 receiver = sender;
                 data = dataPacket.getData();
                 break;
-
-            case Tags.FIND_CHAT_HEADER:
-                return;
-
-            case Tags.EXPIRED_HEADER:
-                receiver = sender;
-                data = Tags.EXPIRED_HEADER;
-                break;
         }
 
-        DTO serverPacket = new DTO(header, sender);
+        DTO serverPacket = new DTO(header);
+        serverPacket.setSender(sender);
         serverPacket.setReceiver(receiver);
         serverPacket.setData(data);
         serverPacket.setCreatedDate(LocalDateTime.now().toString());
@@ -342,6 +367,5 @@ public class Worker extends Thread implements Runnable{
                     + " to " + fromIP
                     + " - ID: " + getPair().getUID());
         }
-
     }
 }

@@ -1,7 +1,9 @@
 package Server;
 
+import Services.DTO;
 import Services.StringUtils;
 import Security.AES_Encryptor;
+import Services.Header;
 import com.google.gson.JsonParser;
 import org.openeuler.com.sun.net.ssl.internal.ssl.Provider;
 
@@ -47,6 +49,9 @@ public class Server {
     public static final int EXECUTOR_MAX = 3;           //số thread tối đa khi server quá tải
     public static final int EXECUTOR_ALIVE_TIME = 1;    //thời gian một thread được sống nếu không làm gì
     public static final int EXECUTOR_CAPACITY = 10;     //Số lượng hàng chờ có thể chứa của executor
+
+    public static final String RENEW_USER_SESSION = "Renewed";
+    public static final int SESSION_EXPIRED_TIME = -1;
 
     private static final String KEY_STORE_NAME = "myKeyStore.jks";
     public static final String SERVER_SIDE_PATH = "workspace/Server.Side/";
@@ -103,12 +108,13 @@ public class Server {
     /**
      * Gửi message đến Client
      */
-    public static String messageHandle(String header, String body, User to) {
-        ServerDataPacket serverPacket = new ServerDataPacket(header, "", body, "", "", "");
-        to.addRequestList(JsonParser.parseString("{ \"Description\": \"server chat\" }").toString());
-        to.addResponseList(JsonParser.parseString(serverPacket.pack()).toString());
+    public static String messageHandle(String message, User to) {
+        DTO serverPacket = new DTO(Header.MESSAGE_SERVER_HEADER);
+        serverPacket.setData(message);
+        to.addRequestList(JsonParser.parseString("{ \"header\": " + Header.MESSAGE_SERVER_HEADER + " }").toString());
+        to.addResponseList(Services.JsonParser.pack(serverPacket));
         to.addDateList(LocalDateTime.now().toString());
-        return AES_Encryptor.encrypt(serverPacket.pack(), to.getSecretKey()); //mã hóa bằng secret key trước khi gửi
+        return AES_Encryptor.encrypt(Services.JsonParser.pack(serverPacket), to.getSecretKey()); //mã hóa bằng secret key trước khi gửi
     }
 
     /**
