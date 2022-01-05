@@ -8,10 +8,7 @@ import Services.Header;
 import Services.StringUtils;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,56 +21,79 @@ import javax.swing.event.DocumentListener;
  * @author Tran Long Tuan Vu
  */
 public class ClientGUI extends MoveJFrame {
-	private int verticalScrollBarMaximumValue;
-	private static final int LIMIT_MESSAGE_LINE = 40;
-	private static final int LIMIT_INPUT_LINE = 30;
 	private static final int LOGIN_PAGE = 0;
 	private static final int CHAT_PAGE = 1;
+	private static final int LIMIT_MESSAGE_LINE = 40;
+	private static final int LIMIT_INPUT_LINE = 30;
+	private static final int AUTO_LEFT_TIME = 20000; //millisecond
 
+	private int scrollBarMaxValue;
 	private int currentPage;
-	private boolean isNeedTimeLine;
+	private boolean isNeedTimeMaker;
 	private boolean isChecking;
 	private String checkResult;
 	private boolean isFinding;
 
+	private Thread timer;
+
 	public ClientGUI() {
 		setTitle("Chat App");
 		initComponents();
-		currentPage = LOGIN_PAGE;
-		isNeedTimeLine = false;
 
+		currentPage = LOGIN_PAGE;
+		isNeedTimeMaker = false;
+
+		//Event khi đóng window
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				try {
-					//kiểm tra nếu có kết nối thì phải gửi "bye" và close socket trước khi tắt giao diện
+					//kiểm tra nếu có kết nối thì phải gửi "Break_Connect" và close socket trước khi tắt giao diện
 					if (Client.checkConnection()) {
 						Client.send(Header.BREAK_CONNECT_HEADER);
-						Client.close();
+						dispose();
+						System.exit(0);
 					}
 				} catch (Exception ignored) {}
 			}
 		});
 	}
 
+	/**
+	 * Có đang là page Login không
+	 */
 	public boolean isLoginPage() {
 		return currentPage == LOGIN_PAGE;
 	}
 
+
+	/**
+	 * Có đang là page Chat không
+	 */
 	public boolean isChatPage() {
 		return currentPage == CHAT_PAGE;
 	}
 
+	/**
+	 * Có đang tìm kiếm bạn chat không
+	 */
 	public boolean isFinding() {
 		return isFinding;
 	}
 
+
+	/**
+	 * Dừng kiểm tra name
+	 */
 	public void stopChecking(String result) {
 		if (isChecking)
 			isChecking = false;
 		this.checkResult = result;
 	}
 
+	/**
+	 * Dừng tìm bạn chat
+	 */
 	public void stopFinding() {
 		if (isFinding)
 			isFinding = false;
@@ -116,6 +136,8 @@ public class ClientGUI extends MoveJFrame {
 		{
 			loginPane.setBackground(Color.white);
 			loginPane.setOpaque(true);
+			loginPane.setFocusable(true);
+			loginPane.requestFocus();
 
 			//---- lbAPPIcon ----
 			lbAPPIcon.setBackground(Color.white);
@@ -151,14 +173,14 @@ public class ClientGUI extends MoveJFrame {
 				inpuNametPanel.setLayout(null);
 
 				//---- lbWelcome ----
-				lbWelcome.setText("Welcome");
+				lbWelcome.setText("   Let's Chat Together");
 				lbWelcome.setFont(new Font("Segoe UI", Font.BOLD, 27));
 				lbWelcome.setForeground(Color.white);
 				inpuNametPanel.add(lbWelcome);
 				lbWelcome.setBounds(new Rectangle(new Point(25, 40), lbWelcome.getPreferredSize()));
 
 				//---- lbTitles ----
-				lbTitles.setText("What's your name ?");
+				lbTitles.setText("");
 				lbTitles.setFont(new Font("Arial", Font.PLAIN, 14));
 				lbTitles.setForeground(Color.white);
 				lbTitles.setLabelFor(txtName);
@@ -168,6 +190,25 @@ public class ClientGUI extends MoveJFrame {
 				//---- txtName ----
 				txtName.setBorder(new EmptyBorder(5,15,5,5));
 				txtName.setFont(new Font("Segoe UI Black", Font.PLAIN, 16));
+				txtName.setHorizontalAlignment(SwingConstants.CENTER);
+				txtName.setText("What's your name ?");
+				txtName.addFocusListener(new FocusListener() {
+					@Override
+					public void focusGained(FocusEvent e) {
+						if(txtName.getText().equalsIgnoreCase("What's your name ?")){
+							txtName.setText("");
+							txtName.setForeground(Color.BLACK);
+						}
+					}
+
+					@Override
+					public void focusLost(FocusEvent e) {
+						if(txtName.getText().trim().equals("")){
+							txtName.setText("What's your name ?");
+							txtName.setForeground(new Color(182, 182, 182));
+						}
+					}
+				});
 				inpuNametPanel.add(txtName);
 				txtName.setBounds(25, 110, 290, 40);
 
@@ -413,13 +454,13 @@ public class ClientGUI extends MoveJFrame {
 				scrollPane2.getVerticalScrollBar().setUnitIncrement(16);
 				scrollPane2.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 				scrollPane2.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-				verticalScrollBarMaximumValue = scrollPane2.getVerticalScrollBar().getMaximum();
+				scrollBarMaxValue = scrollPane2.getVerticalScrollBar().getMaximum();
 				scrollPane2.getVerticalScrollBar().addAdjustmentListener(
 						e -> {
-							if ((verticalScrollBarMaximumValue - e.getAdjustable().getMaximum()) == 0)
+							if ((scrollBarMaxValue - e.getAdjustable().getMaximum()) == 0)
 								return;
 							e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-							verticalScrollBarMaximumValue = scrollPane2.getVerticalScrollBar().getMaximum();
+							scrollBarMaxValue = scrollPane2.getVerticalScrollBar().getMaximum();
 						});
 			}
 			chatPane.add(scrollPane2, JLayeredPane.DEFAULT_LAYER);
@@ -430,20 +471,27 @@ public class ClientGUI extends MoveJFrame {
 		setLocationRelativeTo(getOwner());
 	}
 
+
+	/**
+	 * Xử lý khi bẩm nút "JOIN"
+	 */
 	private void btnJoinHandle() {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
+					txtName.setEnabled(false);
+					btnJoin.setEnabled(false);
+					if (!Client.checkConnection()) {
+						throw new IOException(Client.FAIL_CONNECT);
+					}
 					String name = txtName.getText();
-					if (name.length() > Client.NAME_LIMIT
+					if (name.length() > ClientWorker.NAME_LIMIT
 							|| name.isEmpty() || name.isBlank()) {
 						Dialog.newAlertDialog(ClientGUI.this,"Invalid Name");
 						lbTitles.setText("Must less than 10 characters !");
 						return;
 					}
-					txtName.setEnabled(false);
-					btnJoin.setEnabled(false);
 					btnJoin.setFont(btnJoin.getFont().deriveFont(Font.BOLD, 24));
 					btnQuit.setText("CANCEL");
 					lbWelcome.setText("Checking");
@@ -474,8 +522,8 @@ public class ClientGUI extends MoveJFrame {
 						resetLoginPage();
 					}
 					else {
-						Client.name = txtName.getText();
-						lbTitles.setText("Hi " + Client.name + ", please wait :)");
+						ClientWorker.name = txtName.getText();
+						lbTitles.setText("Hi " + ClientWorker.name + ", please wait :)");
 						startFinding();
 					}
 				} catch (InterruptedException e) {
@@ -487,22 +535,44 @@ public class ClientGUI extends MoveJFrame {
 					//exception throw khi ko thể kết nói tối server.
 					try {
 						System.out.println("Reconnecting...");
+						lbWelcome.setText("Reconnecting");
+						lbAPPIcon.setIcon(new ImageIcon("images/loading.gif"));
 						//Thực hiện kết nối lại
 						Client.close();
 						Client.connectServer();
 						System.out.println("Reconnected");
 						lbWelcome.setText("Reconnected");
+						lbAPPIcon.setIcon(new ImageIcon("images/icon.png"));
+						txtName.setEnabled(true);
+						btnJoin.setEnabled(true);
+						if (!(txtName.getText().length() > ClientWorker.NAME_LIMIT)
+								&& !txtName.getText().isEmpty()
+								&& !txtName.getText().isBlank())
+							btnJoin.doClick();
 					} catch (IOException f) {
 						//Throw exception nếu kết nối lại thất bại
-						System.out.println("Reconnect fail..");
+						System.out.println("Reconnect Failed..");
+						lbWelcome.setText("Reconnected Failed");
+						lbAPPIcon.setIcon(new ImageIcon("images/icon.png"));
 						Dialog.newAlertDialog(Client.Frame, Client.FAIL_CONNECT);
 						setEnabled(true);
+						txtName.setEnabled(true);
+						btnJoin.setEnabled(true);
+					} catch (UnknownError ignored) {
+						lbWelcome.setText("U GOT BANNED !");
+						lbAPPIcon.setIcon(new ImageIcon("images/icon.png"));
+						setEnabled(true);
+						txtName.setEnabled(true);
+						btnJoin.setEnabled(true);
 					}
 				}
 			}
 		}).start();
 	}
 
+	/**
+	 * Xử lý khi bẩm nút "QUIT/CANCEL"
+	 */
 	private void btnQuitHandle() {
 		if (btnQuit.getText().equals("QUIT")) {
 			dispose();
@@ -517,10 +587,14 @@ public class ClientGUI extends MoveJFrame {
 				resetLoginPage();
 			} catch (IOException | InterruptedException ex) {
 				Client.close();
+				Client.Frame.showDisconnectAlert();
 			}
 		}
 	}
 
+	/**
+	 * Xử lý khi bẩm nút "BACK" ở giao diện Chat
+	 */
 	private void btnBackHandle() {
 		new Thread(new Runnable() {
 			@Override
@@ -529,27 +603,30 @@ public class ClientGUI extends MoveJFrame {
 					DTO dto = new DTO(Header.BREAK_PAIR_HEADER);
 					ClientWorker.requestHandle(dto);
 					changeToLogin();
-					if (!Client.socket.isClosed())
-						startFinding();
-					else {
-						Dialog.newAlertDialog(Client.Frame, "Disconnected");
-						Client.Frame.resetLoginPage();
-					}
-				} catch (IOException | InterruptedException ex) {
-					ex.printStackTrace();
+					startFinding();
+				} catch (IOException | InterruptedException ignored) {
+					changeToLogin();
+					Dialog.newAlertDialog(Client.Frame, "Disconnected");
+					Client.Frame.resetLoginPage();
 				}
 			}
 		}).start();
 	}
 
+	/**
+	 * Xử lý khi bẩm nút "User Info" ở giao diện Chat
+	 */
 	private void btnInfoHandle() {
 		JOptionPane.showMessageDialog(
 				ClientGUI.this,
-				Client.pair.toString(),
+				ClientWorker.pair.toString(),
 				"Friend Info",
 				JOptionPane.PLAIN_MESSAGE);
 	}
 
+	/**
+	 * Xử lý khi bẩm nút "SEND" ở giao diện Chat
+	 */
 	private void btnSendHandle() {
 		try {
 			String input;
@@ -565,7 +642,7 @@ public class ClientGUI extends MoveJFrame {
 			txtInput.setText("");
 			inputArea.setText("");
 			revalidate();
-			if (Client.pair.getStatus().equalsIgnoreCase("Online")) {
+			if (ClientWorker.pair.getStatus().equalsIgnoreCase("Online")) {
 				DTO dto = new DTO(Header.MESSAGE_HEADER);
 				dto.setData(input);
 				ClientWorker.requestHandle(dto);
@@ -576,6 +653,9 @@ public class ClientGUI extends MoveJFrame {
 		}
 	}
 
+	/**
+	 * Khởi động tìm kiếm bạn chat
+	 */
 	public void startFinding() throws IOException, NullPointerException, InterruptedException {
 		lbWelcome.setText("Finding");
 		DTO dto = new DTO(Header.FIND_CHAT_HEADER);
@@ -597,10 +677,10 @@ public class ClientGUI extends MoveJFrame {
 			Thread.sleep(200);
 			waitTime += 200;
 		}
-		if (Client.pair != null)
-			changeToChat(Client.pair);
+		changeToChat();
 	}
 
+	//Reset giao diện Login
 	public void resetLoginPage() {
 		stopChecking("stop");
 		stopFinding();
@@ -612,9 +692,12 @@ public class ClientGUI extends MoveJFrame {
 		btnJoin.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 14));
 		btnQuit.setText("QUIT");
 		lbWelcome.setText("Welcome");
-		lbTitles.setText("What's your name ?");
+		lbTitles.setText("");
 	}
 
+	/**
+	 * Thêm dòng chat phía bạn chat
+	 */
 	public void appendReceive(String message, String createdDate) {
 		Color bg = new Color(238,241,249);
 		Font font = new Font("Arial", Font.PLAIN, 16);
@@ -624,6 +707,9 @@ public class ClientGUI extends MoveJFrame {
 		appendMessageToBox(message, createdDate, bg, font, fontColor, fontAlign, align);
 	}
 
+	/**
+	 * Thêm dòng chat phía bản thân
+	 */
 	public void appendSend(String message, String createdDate) {
 		Color bg = new Color(1, 178, 254);
 		Font font = new Font("Arial", Font.PLAIN, 16);
@@ -633,6 +719,9 @@ public class ClientGUI extends MoveJFrame {
 		appendMessageToBox(message, createdDate, bg, font, fontColor, fontAlign, align);
 	}
 
+	/**
+	 * Thêm dòng chat lỗi khi ngừng chat
+	 */
 	public void appendSendFail(String message, String createdDate) {
 		Color bg = new Color(1, 178, 254);
 		Font font = new Font("Arial", Font.PLAIN, 16);
@@ -642,20 +731,32 @@ public class ClientGUI extends MoveJFrame {
 		appendMessageToBox(message, createdDate, bg, font, fontColor, fontAlign, align);
 	}
 
+	/**
+	 * Thêm dòng chat thông báo
+	 */
 	public void appendAlert(String message, boolean isError) {
 		Color bg;
 		if (isError)
 			bg = new Color(250, 115, 115);
 		else bg = new Color(1, 254, 149);
 		Font font = new Font("Arial", Font.PLAIN, 16);
-		Color fontColor = Color.white;
+		Color fontColor = Color.WHITE;
 		int fontAlign = SwingConstants.CENTER;
 		int align = FlowLayout.CENTER;
 		appendMessageToBox(message, "", bg, font, fontColor, fontAlign, align);
+		if (isError) {
+			font = new Font("Arial", Font.PLAIN, 12);
+			fontColor = new Color(250, 115, 115);
+			appendMessageToBox("Left room after 20s", "", null, font, fontColor, fontAlign, align);
+			leftRoomTimer();
+		}
 	}
 
+	/**
+	 * Thêm mark thời gian
+	 */
 	@SuppressWarnings("ConstantConditions")
-	public void appendTimeLine(String time) {
+	public void appendTimeMaker(String time) {
 		LocalDateTime localDateTime = LocalDateTime.parse(time);
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 		time = localDateTime.format(formatter);
@@ -667,6 +768,9 @@ public class ClientGUI extends MoveJFrame {
 		appendMessageToBox(time, "", bg, font, fontColor, fontAlign, align);
 	}
 
+	/**
+	 * Xử lý thêm dòng chat
+	 */
 	private void appendMessageToBox(String message, String createdDate, Color bg, Font font, Color fontColor, int fontAlign, int align) {
 		if (currentPage != CHAT_PAGE)
 			return;
@@ -700,23 +804,53 @@ public class ClientGUI extends MoveJFrame {
 
 		if (align == FlowLayout.RIGHT)
 			panel.add(lbTime);
-		if (Client.pair.getStatus().equalsIgnoreCase("Offline")) {
+		if (ClientWorker.pair.getStatus().equalsIgnoreCase("Offline")) {
 			JLabel lbError = new JLabel(new ImageIcon("images/sendFail.png"));
 			panel.add(lbError);
-			lbChat.setEnabled(false);
+			if (!lbChat.getText().startsWith("Left"))
+				lbChat.setEnabled(false);
 		}
 		panel.add(lbChat);
 		if (align == FlowLayout.LEFT)
 			panel.add(lbTime);
-		if (isNeedTimeLine && !createdDate.equals("")) {
-			appendTimeLine(createdDate);
-			isNeedTimeLine = false;
+		if (isNeedTimeMaker && !createdDate.equals("")) {
+			appendTimeMaker(createdDate);
+			isNeedTimeMaker = false;
 		}
 		jChatPanel.add(panel);
 		jChatPanel.add(Box.createRigidArea(new Dimension(5,0)));
 		jChatPanel.revalidate();
 	}
 
+	public void leftRoomTimer() {
+		timer = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					int time = AUTO_LEFT_TIME;
+					while (time > 0) {
+						Thread.sleep(AUTO_LEFT_TIME/(AUTO_LEFT_TIME/1000));
+						time -= (AUTO_LEFT_TIME/(AUTO_LEFT_TIME/1000));
+						//lbLeftAlert.setText(text + (time/1000) + "s");
+					}
+					btnBack.doClick();
+				} catch (InterruptedException ignored) {}
+			}
+		});
+		timer.start();
+	}
+
+	public void showDisconnectAlert() {
+		if (isLoginPage()) {
+			Dialog.newAlertDialog(Client.Frame, "Disconnected");
+			resetLoginPage();
+		}
+		else appendAlert("Disconnected !",true);
+	}
+
+	/**
+	 * Set thông tin bạn chat
+	 */
 	public void setInfo(PairInfo info) {
 		try {
 			lbPairName.setText(info.getName());
@@ -727,24 +861,34 @@ public class ClientGUI extends MoveJFrame {
 		} catch (NullPointerException ignored) {}
 	}
 
-	public void changeToChat(PairInfo info) {
-		if (isChatPage())
+	/**
+	 * Chuyển qua giao diện Chat
+	 */
+	public void changeToChat() {
+		if (isChatPage() || ClientWorker.pair == null)
 			return;
-		setInfo(info);
+		setInfo(ClientWorker.pair);
 		currentPage = CHAT_PAGE;
-		isNeedTimeLine = true;
+		isNeedTimeMaker = true;
 		getContentPane().removeAll();
 		getContentPane().add(chatPane, "card2");
-		appendAlert(info.getName() + " joined the chat", false);
+		appendAlert(ClientWorker.pair.getName() + " joined the chat", false);
 		getContentPane().revalidate();
 		getContentPane().repaint();
 	}
 
+	/**
+	 * Chuyển qua giao diện Login
+	 */
 	public void changeToLogin() {
 		if (isLoginPage())
 			return;
 		currentPage = LOGIN_PAGE;
-		Client.pair = null;
+		if (timer != null) {
+			timer.interrupt();
+			timer = null;
+		}
+		ClientWorker.pair = null;
 		jChatPanel.removeAll();
 		jChatPanel.revalidate();
 		getContentPane().removeAll();

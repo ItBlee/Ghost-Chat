@@ -2,6 +2,9 @@ package Services;
 
 import java.util.Objects;
 
+/**
+ * DATA TRANSFER OBJECT
+ */
 public class DTO {
     private final String header;
     private String sender;

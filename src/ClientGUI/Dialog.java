@@ -17,15 +17,15 @@ import javax.swing.border.*;
  * @author Tran Long Tuan Vu
  */
 public class Dialog extends JDialog {
-	private static final int AUTO_SKIP_TIME = 10000;
+	private static final int AUTO_SKIP_TIME = 10000; //millisecond
 	private final Window owner;
-	private ImageIcon icon;
-	private Color fontColor;
-	private String content;
-	private String btnOkText;
-	private DTO innerDTO;
-	private String btnCancelText;
-	private boolean isConfirm;
+	private final ImageIcon icon;
+	private final Color fontColor;
+	private final String content;
+	private final String btnOkText;
+	private final DTO innerDTO;
+	private final String btnCancelText;
+	private final boolean isConfirm;
 
 	private Thread timer;
 
@@ -173,6 +173,7 @@ public class Dialog extends JDialog {
 			dto.setSender(innerDTO.getSender());
 			dto.setData("true");
 			ClientWorker.requestHandle(dto);
+			timer.interrupt();
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
@@ -187,6 +188,7 @@ public class Dialog extends JDialog {
 			dto.setData("false");
 			try {
 				ClientWorker.requestHandle(dto);
+				timer.interrupt();
 			} catch (IOException ex) {
 				ex.printStackTrace();
 			}
@@ -208,14 +210,14 @@ public class Dialog extends JDialog {
 						cancelButton.setText(text + "(" + (time/1000) + ")");
 					}
 					cancelButton.doClick();
-				} catch (InterruptedException e) {}
+				} catch (InterruptedException ignored) {}
 			}
 		});
 		timer.start();
 	}
 
 	@SuppressWarnings("ConstantConditions")
-	public static Dialog newInviteDialog(Window parent, String pairName) {
+	public static void newInviteDialog(Window parent, String pairName) {
 		DTO dto = new DTO(Header.INVITE_CHAT_HEADER);
 		ImageIcon icon = new ImageIcon("images/found.png");
 		Color fontColor = new Color(115,170,250);
@@ -223,40 +225,40 @@ public class Dialog extends JDialog {
 		String btnOkText = "INVITE";
 		String btnCancelText = "SKIP";
 		boolean isConfirm = true;
-		return new Dialog(parent, content, btnOkText, dto, btnCancelText, icon, fontColor, isConfirm);
+		new Dialog(parent, content, btnOkText, dto, btnCancelText, icon, fontColor, isConfirm);
 	}
 
 	@SuppressWarnings("ConstantConditions")
-	public static Dialog newInviteFailedDialog(Window parent) {
+	public static void newInviteFailedDialog(Window parent) {
 		ImageIcon icon = new ImageIcon("images/fail.png");
 		Color fontColor = new Color(115,170,250);
 		String content = StringUtils.applyWrapForGUI("Friend Busy..");
 		String btnOkText = null;
 		String btnCancelText = "GOT IT";
 		boolean isConfirm = false;
-		return new Dialog(parent, content, btnOkText, new DTO(""), btnCancelText, icon, fontColor, isConfirm);
+		new Dialog(parent, content, btnOkText, new DTO(""), btnCancelText, icon, fontColor, isConfirm);
 	}
 
 	@SuppressWarnings("ConstantConditions")
-	public static Dialog newConfirmDialog(Window parent, DTO dto) {
+	public static void newConfirmDialog(Window parent, DTO dto) {
 		ImageIcon icon = new ImageIcon("images/accept.png");
 		Color fontColor = new Color(115,170,250);
 		String content = StringUtils.applyWrapForGUI("Accept invite:\n" + dto.getData() + " ?");
 		String btnOkText = "ACCEPT";
 		String btnCancelText = "NO";
 		boolean isConfirm = true;
-		return new Dialog(parent, content, btnOkText, dto, btnCancelText, icon, fontColor, isConfirm);
+		new Dialog(parent, content, btnOkText, dto, btnCancelText, icon, fontColor, isConfirm);
 	}
 
 	@SuppressWarnings("ConstantConditions")
-	public static Dialog newAlertDialog(Window parent, String error) {
+	public static void newAlertDialog(Window parent, String error) {
 		ImageIcon icon = new ImageIcon("images/error.png");
 		Color fontColor = new Color(250, 115, 115);
 		String content = StringUtils.applyWrapForGUI(error);
 		String btnOkText = null;
 		String btnCancelText = "GOT IT";
 		boolean isConfirm = false;
-		return new Dialog(parent, content, btnOkText, new DTO(""), btnCancelText, icon, fontColor, isConfirm);
+		new Dialog(parent, content, btnOkText, new DTO(""), btnCancelText, icon, fontColor, isConfirm);
 	}
 
 	private JPanel dialogPane;

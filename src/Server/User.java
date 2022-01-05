@@ -3,8 +3,17 @@ package Server;
 import java.net.Socket;
 import java.util.*;
 
+
+/**
+ * Object cho người dùng khi kết nối vào Server
+ */
 public class User {
-    private String name;
+    public static final String STATUS_ONLINE = "online";
+    public static final String STATUS_OFFLINE = "offline";
+    public static final String STATUS_EXPIRED = "expired";
+    public static final String STATUS_VERIFIED = "verified";
+    public static final String STATUS_DUPLICATED = "duplicated";
+
     private final String UID;
     private Socket socket;
     private Worker worker;
@@ -21,14 +30,6 @@ public class User {
         requestList = new ArrayList<>();
         responseList = new ArrayList<>();
         dateList = new ArrayList<>();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public Socket getSocket() {

@@ -67,7 +67,7 @@ public class SSLVerifier extends Thread implements Runnable {
             user.setSecretKey(dto.getSecretKey());
             user.setModifiedDate(LocalDateTime.now().toString());
             user.setSessionTime(System.currentTimeMillis());
-            user.setStatus("offline");
+            user.setStatus(User.STATUS_OFFLINE);
             //Thêm mới user với uid và secretKey vừa nhận tùy vào user đó tồn tại hay chưa
             if (!Server.users.add(user)) {
                 for (User u : Server.users) {

@@ -3,27 +3,36 @@ package Client;
 import ClientGUI.ClientGUI;
 import ClientGUI.Dialog;
 import Security.AES_Encryptor;
-import Services.DTO;
 import Services.FileHandler;
-import Services.History;
 import Services.StringUtils;
 import org.openeuler.com.sun.net.ssl.internal.ssl.Provider;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.security.auth.callback.UnsupportedCallbackException;
 import java.io.*;
 import java.net.Socket;
+import java.net.UnknownServiceException;
 import java.security.Security;
 import java.time.LocalDateTime;
 import java.util.*;
 
 public class Client {
-    public static final int MAIN_PORT = 5000;
-    public static final int VERIFY_PORT = 5005;
+    public static final int MAIN_PORT = 5000;   //Port trao đổi dữ liệu.
+    public static final int VERIFY_PORT = 5005; //Port dùng để đăng nhập và xác minh.
     public static final String SERVER_IP = "localhost";
 
+    //SSL Socket
+    public static final String TRUST_STORE_NAME = "myTrustStore.jts"; //store lưu public Key + chứng chỉ.
+    public static final String FILE_CONFIG_NAME = "system.conf";
+    public static final String CLIENT_SIDE_PATH = "workspace/Client.Side/";
+    public static final String TRUST_STORE_PASSWORD = "checksyntax";
+    public static final boolean SSL_DEBUG_ENABLE = false;
+
+    public static final String FAIL_CONNECT = "Server Closed";
+
     public static ClientGUI Frame;
-    public static Thread Listener;
+    public static ClientWorker worker;
 
     public static String UID;
     public static String secretKey;
@@ -35,20 +44,8 @@ public class Client {
     public static DataInputStream inSSL;
     public static DataOutputStream outSSL;
 
-    public static String name;
-    public static PairInfo pair;
     public static List<String> uidStore;
     public static int line;
-    public static DTO currentPacket;
-    public static ArrayList<History> histories;
-
-    public static final String TRUST_STORE_NAME = "myTrustStore.jts";
-    public static final String FILE_CONFIG_NAME = "system.conf";
-    public static final String CLIENT_SIDE_PATH = "workspace/Client.Side/";
-    public static final String TRUST_STORE_PASSWORD = "checksyntax";
-    public static final boolean SSL_DEBUG_ENABLE = false;
-    public static final String FAIL_CONNECT = "Server Closed";
-    public static final int NAME_LIMIT = 10;
 
     /**
      * Load UID và secretKey cho Client tạo mới nếu chưa tồn tại
@@ -116,12 +113,29 @@ public class Client {
             System.setProperty("javax.net.debug","all");
     }
 
-    public static void connectServer() throws IOException, NullPointerException {
+    public static void connect() throws IOException {
         socket = new Socket(SERVER_IP, MAIN_PORT);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-        socket.setSoTimeout(10 * 1000);
+    }
 
+    /**
+     * Thực hiện kết nối đến Server qua nhiều bước.
+     */
+    public static void connectServer() throws IOException, NullPointerException, UnknownError {
+        connect();
+        socket.setSoTimeout(10 * 1000);
+        verify();
+        socket.setSoTimeout(0);
+        //sau khi kết nối thành công -> Tạo Thread lắng nghe thông điệp từ server
+        worker = new ClientWorker();
+        worker.start();
+    }
+
+    /**
+     * Thực hiện xác minh
+     */
+    public static void verify() throws IOException, NullPointerException, UnknownError {
         //Đọc list UID từ file system.conf
         String config = FileHandler.read(CLIENT_SIDE_PATH + FILE_CONFIG_NAME);
         //Truyền list đã đọc vào uidStore
@@ -133,19 +147,19 @@ public class Client {
             send(UID); //Gửi UID để server kiểm tra
 
             String verify = receive(); //Nhận kết quả kiểm tra từ Server
-            if (verify.equals("Banned")) {
+            if (verify.equalsIgnoreCase("Banned")) {
                 Client.close();
                 Dialog.newAlertDialog(Frame,"Got Banned");
-                throw new IOException();
+                throw new UnknownError("Got Banned Exception !");
             }
-            if (verify.equals("Verified")) { //Thông qua có thể dùng UID và key hiện có
+            if (verify.equalsIgnoreCase("verified")) { //Thông qua có thể dùng UID và key hiện có
                 System.out.println(verify + ": " + UID + " - Key: " + secretKey);
                 isVerified = true;
             }
             else { //Ko thông qua -> tạo UID và key mới thử lại
                 if (line != -1) { //Lấy được UID từ list, -1 khi list đã hết UID
                     System.out.println(verify + ": " + UID + " - Key: " + secretKey);
-                    if (verify.equalsIgnoreCase("Duplicated")) {
+                    if (verify.equalsIgnoreCase("duplicated")) {
                         line++;
                         config(line);
                     } else create(line);
@@ -155,9 +169,7 @@ public class Client {
                 try {
                     //Thực hiện kết nối SSL socket tới server verifier.
                     openVerify();
-
                     sendVerify(); //Gửi lại UID + key
-
                     waitVerify(); //chờ phản hồi ""
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -172,18 +184,20 @@ public class Client {
         FileHandler.write(CLIENT_SIDE_PATH + FILE_CONFIG_NAME, "", false); //clear file trước.
         for (String s : uidStore)
             FileHandler.write(CLIENT_SIDE_PATH + FILE_CONFIG_NAME, s + "\n", true);
-
-        //sau khi kết nối thành công
-        //-> Tạo Thread lắng nghe thông điệp từ server
-        socket.setSoTimeout(0);
-        Listener = new ClientWorker();
-        Listener.start();
     }
 
+    /**
+     * Kiểm tra kết nối
+     */
     public static boolean checkConnection() {
-        return socket != null;
+        if (socket != null)
+            return !socket.isClosed();
+        return false;
     }
 
+    /**
+     * Mở cổng SSL Socket để thực hiện xác minh
+     */
     public static void openVerify() throws IOException, NullPointerException {
         //Tạo SSL socket để gửi UID và secretKey một cách an toàn
         addProvider();
@@ -225,17 +239,15 @@ public class Client {
         return in.readLine();
     }
 
+    /**
+     * Đóng kết nối
+     */
     public static void close() {
         try {
             in.close();
             out.close();
             socket.close();
-            System.out.println("Server closed.");
-            if (Client.Frame.isLoginPage()) {
-                Dialog.newAlertDialog(Client.Frame, "Disconnected");
-                Client.Frame.resetLoginPage();
-            }
-            else Client.Frame.appendAlert("Disconnected !",true);
+            System.out.println(Client.FAIL_CONNECT);
         } catch (Exception ignored) {}
     }
 }

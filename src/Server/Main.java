@@ -8,8 +8,8 @@ import java.util.concurrent.*;
 
 public class Main {
     public static void main(String[] args) {
+        //Khởi tạo giao diện
         FlatIntelliJLaf.setup();
-
         ServerManagerGUI.AuthenticationFrame();
         Server.manager = new ServerManagerGUI();
     }
@@ -19,6 +19,7 @@ public class Main {
             Server.open();
         } catch (IOException | NullPointerException e) {
             e.printStackTrace();
+            System.exit(0);
         }
 
         //Thread nhận đăng ký UID và secret key
@@ -38,7 +39,7 @@ public class Main {
         });
         Server.verifier.start();
 
-        //Thread bấm giờ để don dẹp bộ nhớ UID-secretKey
+        //Thread bấm giờ để don dẹp bộ nhớ UID-secretKey theo Session
         Server.timer = new ServerTimer(Server.TIMER_LOOP, Server.TIMER_SESSION); //run mỗi 10p và thời gian sống của UID client là 60p
         Server.timer.start();
 

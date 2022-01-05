@@ -56,8 +56,8 @@ public class Server {
     private static final String KEY_STORE_NAME = "myKeyStore.jks";
     public static final String SERVER_SIDE_PATH = "workspace/Server.Side/";
     private static final String KEY_STORE_ALIAS = "mykey";
-    public static final String KEY_STORE_HASH = "0b1957259ce60db4f9cb5c51cb76a000cefe7234f922a515f56b977951eb6f84";
-    public static final String KEY_STORE_SALT = "5ae877676f3efe25";
+    public static final String KEY_STORE_PASSWORD_HASH = "0b1957259ce60db4f9cb5c51cb76a000cefe7234f922a515f56b977951eb6f84";
+    public static final String KEY_STORE_PASSWORD_SALT = "5ae877676f3efe25";
     private static final boolean SSL_DEBUG_ENABLE = false;
 
     /**
@@ -110,7 +110,10 @@ public class Server {
      */
     public static String messageHandle(String message, User to) {
         DTO serverPacket = new DTO(Header.MESSAGE_SERVER_HEADER);
+        serverPacket.setSender("Server");
+        serverPacket.setReceiver(to.getUID());
         serverPacket.setData(message);
+        serverPacket.setCreatedDate(LocalDateTime.now().toString());
         to.addRequestList(JsonParser.parseString("{ \"header\": " + Header.MESSAGE_SERVER_HEADER + " }").toString());
         to.addResponseList(Services.JsonParser.pack(serverPacket));
         to.addDateList(LocalDateTime.now().toString());

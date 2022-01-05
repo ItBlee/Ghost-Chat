@@ -10,7 +10,8 @@ import java.net.Socket;
 import java.time.LocalDateTime;
 import java.util.*;
 
-public class Worker extends Thread implements Runnable{
+public class Worker extends Thread implements Runnable {
+    private String myName;
     private User user;
     private User pairUser;
     private final Socket socket;
@@ -44,6 +45,14 @@ public class Worker extends Thread implements Runnable{
             DTO dto = new DTO(Header.SERVER_BUSY_HEADER);
             responseHandle(dto);
         }
+    }
+
+    public String getMyName() {
+        return myName;
+    }
+
+    public void setMyName(String myName) {
+        this.myName = myName;
     }
 
     public User getUser() {
@@ -134,7 +143,7 @@ public class Worker extends Thread implements Runnable{
     }
 
     private void verify() throws IOException, NullPointerException {
-        String verifyStatus = "Expired";
+        String verifyStatus = User.STATUS_EXPIRED;
         do {
             try {
                 user = new User(receive());
@@ -149,29 +158,29 @@ public class Worker extends Thread implements Runnable{
                 ||Server.banList.containsValue(user.getUID())) {
                 send("Banned");
                 close();
-                throw new IOException();
+                throw new IOException("This connect got banned !");
             }
 
             //check trong list user.
             for (User u : Server.users) {
                 if (u.equals(user)) {
-                    if (u.getStatus().equalsIgnoreCase("online")) {
-                        verifyStatus = "Duplicated";
+                    if (u.getStatus().equalsIgnoreCase(User.STATUS_ONLINE)) {
+                        verifyStatus = User.STATUS_DUPLICATED;
                         break;
                     }
 
                     user = u;
                     user.setSocket(socket);
                     user.setWorker(Worker.this);
-                    user.setStatus("online");
+                    user.setStatus(User.STATUS_ONLINE);
                     if (user.getSessionTime() != -1)
-                        verifyStatus = "Verified";
+                        verifyStatus = User.STATUS_VERIFIED;
                     break;
                 }
             }
 
             send(verifyStatus);
-        } while (!verifyStatus.equals("Verified"));
+        } while (!verifyStatus.equals(User.STATUS_VERIFIED));
         System.out.println("Client " + fromIP
                 + " - " + verifyStatus + " with ID: " + user.getUID()
                 + " | Key: " + user.getSecretKey());
@@ -182,7 +191,7 @@ public class Worker extends Thread implements Runnable{
     //Hàm kiểm tra tên có tồn tại chưa
     public boolean checkName(String name) {
         for (User user : Server.users) {
-            if (name.equalsIgnoreCase(user.getName()))
+            if (name.equalsIgnoreCase(user.getWorker().getMyName()))
                 return false;
         }
         return true;
@@ -233,8 +242,8 @@ public class Worker extends Thread implements Runnable{
             stopFinder();
             in.close();
             out.close();
-            if (user.getStatus().equals("online"))
-                user.setStatus("offline");
+            if (user.getStatus().equals(User.STATUS_ONLINE))
+                user.setStatus(User.STATUS_OFFLINE);
             user.getSocket().close();
 
             recheckIfTargetAtManager(user);
@@ -245,7 +254,7 @@ public class Worker extends Thread implements Runnable{
     public void clearInfo() {
         Server.queue.remove(user);
         System.out.println(Server.queue);
-        user.setName(null);
+        user.getWorker().setMyName(null);
         denied.clear();
         histories.clear();
     }
@@ -279,7 +288,7 @@ public class Worker extends Thread implements Runnable{
 
         if (user.getSessionTime() == Server.SESSION_EXPIRED_TIME) {
             System.out.println("Secret Key of " + user.getUID() + " expired !");
-            send("Expired");
+            send(User.STATUS_EXPIRED);
             return null;
         }
 
@@ -346,15 +355,15 @@ public class Worker extends Thread implements Runnable{
                 receiver = getPair().getUID();
                 data = dataPacket.getData();
                 String sentDate = LocalDateTime.now().toString();
-                getHistories().get(getPair()).add(new History(getUser().getName(), dataPacket.getData(), sentDate));
-                getPair().getWorker().getHistories().get(getUser()).add(new History(getUser().getName(), dataPacket.getData(), sentDate));
+                getHistories().get(getPair()).add(new History(getMyName(), dataPacket.getData(), sentDate));
+                getPair().getWorker().getHistories().get(getUser()).add(new History(getMyName(), dataPacket.getData(), sentDate));
                 break;
 
             case Header.NAME_CHECK_HEADER:
                 receiver = sender;
                 boolean isValid = checkName(dataPacket.getData());
                 if (isValid)
-                    getUser().setName(dataPacket.getData());
+                    setMyName(dataPacket.getData());
                 data = String.valueOf(isValid);
                 break;
 

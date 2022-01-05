@@ -10,6 +10,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.net.UnknownServiceException;
 
 public class Main {
     public static void main(String[] args) {
@@ -39,8 +40,8 @@ public class Main {
         //Cấu trúc Client và kết nối tới Server
         try {
             Client.connectServer();
-        } catch (IOException | NullPointerException ignored) { //Nếu kết nói thất bại
-            System.out.println("Server closed.");
+        } catch (IOException | NullPointerException | UnknownError ignored) { //Nếu kết nói thất bại
+            System.out.println(Client.FAIL_CONNECT);
             Dialog.newAlertDialog(Client.Frame, Client.FAIL_CONNECT);
             Client.Frame.stopChecking("stop");
             Client.Frame.stopFinding();

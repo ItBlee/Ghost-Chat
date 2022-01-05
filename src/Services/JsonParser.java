@@ -7,6 +7,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+/**
+ * Format Json
+ */
 public class JsonParser {
     /**
      * Đóng gói data packet thành chuỗi dữ liệu JSON
@@ -41,7 +44,7 @@ public class JsonParser {
 
     public static String packUserInfo(User user) {
         JsonObject packet = new JsonObject();
-        packet.addProperty("name", user.getName());
+        packet.addProperty("name", user.getWorker().getMyName());
         packet.addProperty("uid", user.getUID());
         packet.addProperty("status", user.getStatus());
         packet.addProperty("modifiedDate", user.getModifiedDate());

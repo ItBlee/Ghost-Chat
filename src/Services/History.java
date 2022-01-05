@@ -1,5 +1,8 @@
 package Services;
 
+/**
+ * Object lịch sử
+ */
 public class History {
     private final String sender;
     private final String message;

@@ -1,5 +1,8 @@
 package Services;
 
+/**
+ * Tag header của DTO
+ */
 public class Header {
     public static final String BREAK_CONNECT_HEADER = "Break_Connect";
     public static final String BREAK_PAIR_HEADER = "Break_Pair";

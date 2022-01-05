@@ -32,8 +32,7 @@ public class ServerManagerGUI extends JFrame {
             + "Command (for all): \n"
             + "#ALL message... - Chat all.\n"
             + "#CLEAR - Clear all user history.\n"
-            + "#STOP - Stop all user.\n"
-            + "#SPENT.";
+            + "#STOP - Stop all user.";
 
     private final String tutorial_for_online = "Enter message or command ...\n\n"
             + "Command (for online): \n"
@@ -310,8 +309,8 @@ public class ServerManagerGUI extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 Server.keyStore_password = new String(pfPassword.getPassword());
                 //hash password nhập vào và kiểm tra
-                String hash = StringUtils.applySha256(Server.keyStore_password, Server.KEY_STORE_SALT);
-                if (hash.equals(Server.KEY_STORE_HASH)) {
+                String hash = StringUtils.applySha256(Server.keyStore_password, Server.KEY_STORE_PASSWORD_SALT);
+                if (hash.equals(Server.KEY_STORE_PASSWORD_HASH)) {
                     frame.dispose();
                     Server.manager.setVisible(true);
                     Main.run();
@@ -366,9 +365,6 @@ public class ServerManagerGUI extends JFrame {
                         jLabel1.setText("STOPPED !");
                         break;
 
-                    case "#SPENT":
-                        break;
-
                     default:
                         jLabel1.setText("WRONG !");
                         break;
@@ -386,8 +382,7 @@ public class ServerManagerGUI extends JFrame {
                         break;
                     case "#STOP":
                         stopUser(toUser);
-                        jLabel1.setText("STOP");
-                        _btnCheck.doClick();
+                        jLabel1.setText("STOPPED!");
                         break;
                     case "#CLEAR":
                         clearUser(toUser);
@@ -417,7 +412,9 @@ public class ServerManagerGUI extends JFrame {
             out.write(packet);
             out.newLine();
             out.flush();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void stopAllUser() {
@@ -453,7 +450,7 @@ public class ServerManagerGUI extends JFrame {
     private void unbanUser() {
         if (!toUser.getStatus().equals("banned"))
             return;
-        toUser.setStatus("offline");
+        toUser.setStatus(User.STATUS_OFFLINE);
         renewSession();
         String getIP = toUser.getSocket().getInetAddress().getHostAddress();
         Server.banList.remove(getIP);
@@ -461,14 +458,14 @@ public class ServerManagerGUI extends JFrame {
     }
 
     private void stopUser(User to) {
-        if (!to.getStatus().equals("online"))
+        if (!to.getStatus().equals(User.STATUS_ONLINE))
             return;
         try {
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(to.getSocket().getOutputStream()));
             out.write("stop");
             out.newLine();
             out.flush();
-            to.getSocket().close();
+            to.getWorker().close();
         } catch (IOException ignored) {}
     }
 
@@ -621,7 +618,7 @@ public class ServerManagerGUI extends JFrame {
 
         textField.setText(toUser.getUID());
         textField.setForeground(Color.white);
-        if (toUser.getStatus().equalsIgnoreCase("online")) {
+        if (toUser.getStatus().equalsIgnoreCase(User.STATUS_ONLINE)) {
             if (toUser.getSessionTime() == -1) {
                 textField.setBackground(new Color(231, 231, 60));
                 jLabel2.setText(jLabel2.getText() + " (Expired)");

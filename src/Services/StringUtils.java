@@ -1,5 +1,8 @@
 package Services;
 
+import Client.ClientWorker;
+import ClientGUI.ClientGUI;
+import ClientGUI.Dialog;
 import org.davidmoten.text.utils.WordWrap;
 
 import java.awt.*;
@@ -10,6 +13,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+/**
+ * Xử lý chuỗi
+ */
 public class StringUtils {
     public static String wrapText(String text){
         return WordWrap.from(text).maxWidth(40).insertHyphens(true).wrap();

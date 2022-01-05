@@ -3,6 +3,10 @@ package Client;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+
+/**
+ * Object chứa info bạn chat
+ */
 public class PairInfo {
     private String name;
     private String uid;
