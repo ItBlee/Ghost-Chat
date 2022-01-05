@@ -46,7 +46,7 @@ public class Server {
     public static ExecutorService sslExecutor;
     public static ThreadPoolExecutor executor;
     public static final int EXECUTOR_CORE = 3;          //Số thread một lúc
-    public static final int EXECUTOR_MAX = 3;           //số thread tối đa khi server quá tải
+    public static final int EXECUTOR_MAX = 5;           //số thread tối đa khi server quá tải
     public static final int EXECUTOR_ALIVE_TIME = 1;    //thời gian một thread được sống nếu không làm gì
     public static final int EXECUTOR_CAPACITY = 10;     //Số lượng hàng chờ có thể chứa của executor
 

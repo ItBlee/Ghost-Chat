@@ -1,13 +1,20 @@
 package ClientGUI;
 
+import Client.Client;
+import Client.ClientWorker;
+import Client.PairInfo;
+import Services.DTO;
+import Services.Header;
 import Services.StringUtils;
-import com.formdev.flatlaf.FlatIntelliJLaf;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.font.TextAttribute;
-import java.util.Map;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.DocumentEvent;
@@ -20,12 +27,56 @@ public class ClientGUI extends MoveJFrame {
 	private int verticalScrollBarMaximumValue;
 	private static final int LIMIT_MESSAGE_LINE = 40;
 	private static final int LIMIT_INPUT_LINE = 30;
+	private static final int LOGIN_PAGE = 0;
+	private static final int CHAT_PAGE = 1;
 
-	private static Timer alphaChanger;
+	private int currentPage;
+	private boolean isNeedTimeLine;
+	private boolean isChecking;
+	private String checkResult;
+	private boolean isFinding;
 
 	public ClientGUI() {
 		setTitle("Chat App");
 		initComponents();
+		currentPage = LOGIN_PAGE;
+		isNeedTimeLine = false;
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				try {
+					//kiểm tra nếu có kết nối thì phải gửi "bye" và close socket trước khi tắt giao diện
+					if (Client.checkConnection()) {
+						Client.send(Header.BREAK_CONNECT_HEADER);
+						Client.close();
+					}
+				} catch (Exception ignored) {}
+			}
+		});
+	}
+
+	public boolean isLoginPage() {
+		return currentPage == LOGIN_PAGE;
+	}
+
+	public boolean isChatPage() {
+		return currentPage == CHAT_PAGE;
+	}
+
+	public boolean isFinding() {
+		return isFinding;
+	}
+
+	public void stopChecking(String result) {
+		if (isChecking)
+			isChecking = false;
+		this.checkResult = result;
+	}
+
+	public void stopFinding() {
+		if (isFinding)
+			isFinding = false;
 	}
 
 	private void initComponents() {
@@ -108,14 +159,14 @@ public class ClientGUI extends MoveJFrame {
 
 				//---- lbTitles ----
 				lbTitles.setText("What's your name ?");
-				lbTitles.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 14));
+				lbTitles.setFont(new Font("Arial", Font.PLAIN, 14));
 				lbTitles.setForeground(Color.white);
 				lbTitles.setLabelFor(txtName);
 				inpuNametPanel.add(lbTitles);
 				lbTitles.setBounds(25, 86, 295, 25);
 
 				//---- txtName ----
-				txtName.setBorder(new EmptyBorder(5,5,5,5));
+				txtName.setBorder(new EmptyBorder(5,15,5,5));
 				txtName.setFont(new Font("Segoe UI Black", Font.PLAIN, 16));
 				inpuNametPanel.add(txtName);
 				txtName.setBounds(25, 110, 290, 40);
@@ -128,6 +179,12 @@ public class ClientGUI extends MoveJFrame {
 				btnJoin.setBackground(new Color(115, 170, 250));
 				btnJoin.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 14));
 				btnJoin.setForeground(Color.white);
+				btnJoin.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						btnJoinHandle();
+					}
+				});
 				inpuNametPanel.add(btnJoin);
 				btnJoin.setBounds(25, 170, 290, 39);
 
@@ -139,6 +196,12 @@ public class ClientGUI extends MoveJFrame {
 				btnQuit.setBackground(new Color(250, 115, 115));
 				btnQuit.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 14));
 				btnQuit.setForeground(Color.white);
+				btnQuit.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						btnQuitHandle();
+					}
+				});
 				inpuNametPanel.add(btnQuit);
 				btnQuit.setBounds(25, 215, 290, 39);
 
@@ -178,7 +241,13 @@ public class ClientGUI extends MoveJFrame {
 				btnBack.setFocusPainted(false);
 				btnBack.setBorderPainted(false);
 				btnBack.setIcon(new ImageIcon("images/back.png"));
-				btnInfo.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				btnBack.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				btnBack.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						btnBackHandle();
+					}
+				});
 				chatHeaderPanel.add(btnBack);
 				btnBack.setBounds(10, 20, 27, 35);
 
@@ -213,6 +282,12 @@ public class ClientGUI extends MoveJFrame {
 				btnInfo.setBackground(Color.white);
 				btnInfo.setIcon(new ImageIcon("images/info.png"));
 				btnInfo.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				btnInfo.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						btnInfoHandle();
+					}
+				});
 				chatHeaderPanel.add(btnInfo);
 				btnInfo.setBounds(287, 21, 28, 29);
 
@@ -244,7 +319,7 @@ public class ClientGUI extends MoveJFrame {
 			btnSend.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					appendSend("Hải nèHải nèHảiHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nèHải nè");
+					btnSendHandle();
 				}
 			});
 			chatPane.add(btnSend, JLayeredPane.DEFAULT_LAYER);
@@ -355,34 +430,216 @@ public class ClientGUI extends MoveJFrame {
 		setLocationRelativeTo(getOwner());
 	}
 
-	public void appendReceive(String message) {
+	private void btnJoinHandle() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					String name = txtName.getText();
+					if (name.length() > Client.NAME_LIMIT
+							|| name.isEmpty() || name.isBlank()) {
+						Dialog.newAlertDialog(ClientGUI.this,"Invalid Name");
+						lbTitles.setText("Must less than 10 characters !");
+						return;
+					}
+					txtName.setEnabled(false);
+					btnJoin.setEnabled(false);
+					btnJoin.setFont(btnJoin.getFont().deriveFont(Font.BOLD, 24));
+					btnQuit.setText("CANCEL");
+					lbWelcome.setText("Checking");
+					lbAPPIcon.setIcon(new ImageIcon("images/loading.gif"));
+					DTO dto = new DTO(Header.NAME_CHECK_HEADER);
+					dto.setData(name);
+					ClientWorker.requestHandle(dto);
+					int i = 1;
+					int waitTime = 0;
+					isChecking = true;
+					while (isChecking || waitTime < 2000) {
+						btnJoin.setText(("" + i++)
+								.replace("1", "●")
+								.replace("2", "●●")
+								.replace("3", "●●●")
+								.replace("4", "●●●●")
+								.replace("5", "●●●●●"));
+						if (i == 5)
+							i = 1;
+						//noinspection BusyWait
+						Thread.sleep(200);
+						waitTime += 200;
+					}
+					if (checkResult.equals("stop"))
+						return;
+					if (checkResult.equalsIgnoreCase("false")) {
+						Dialog.newAlertDialog(ClientGUI.this, "Name Used");
+						resetLoginPage();
+					}
+					else {
+						Client.name = txtName.getText();
+						lbTitles.setText("Hi " + Client.name + ", please wait :)");
+						startFinding();
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					Dialog.newAlertDialog(ClientGUI.this, "Got ERROR");
+					if (btnQuit.getText().equals("CANCEL"))
+						btnQuit.doClick();
+				} catch (IOException | NullPointerException ex) {
+					//exception throw khi ko thể kết nói tối server.
+					try {
+						System.out.println("Reconnecting...");
+						//Thực hiện kết nối lại
+						Client.close();
+						Client.connectServer();
+						System.out.println("Reconnected");
+						lbWelcome.setText("Reconnected");
+					} catch (IOException f) {
+						//Throw exception nếu kết nối lại thất bại
+						System.out.println("Reconnect fail..");
+						Dialog.newAlertDialog(Client.Frame, Client.FAIL_CONNECT);
+						setEnabled(true);
+					}
+				}
+			}
+		}).start();
+	}
+
+	private void btnQuitHandle() {
+		if (btnQuit.getText().equals("QUIT")) {
+			dispose();
+			System.exit(0);
+		} else {
+			try {
+				DTO dto = new DTO(Header.STOP_FIND_HEADER);
+				ClientWorker.requestHandle(dto);
+				stopChecking("stop");
+				stopFinding();
+				Thread.sleep(500);
+				resetLoginPage();
+			} catch (IOException | InterruptedException ex) {
+				Client.close();
+			}
+		}
+	}
+
+	private void btnBackHandle() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					DTO dto = new DTO(Header.BREAK_PAIR_HEADER);
+					ClientWorker.requestHandle(dto);
+					changeToLogin();
+					if (!Client.socket.isClosed())
+						startFinding();
+					else {
+						Dialog.newAlertDialog(Client.Frame, "Disconnected");
+						Client.Frame.resetLoginPage();
+					}
+				} catch (IOException | InterruptedException ex) {
+					ex.printStackTrace();
+				}
+			}
+		}).start();
+	}
+
+	private void btnInfoHandle() {
+		JOptionPane.showMessageDialog(
+				ClientGUI.this,
+				Client.pair.toString(),
+				"Friend Info",
+				JOptionPane.PLAIN_MESSAGE);
+	}
+
+	private void btnSendHandle() {
+		try {
+			String input;
+			if (scrollPane1.isVisible()) {
+				input = inputArea.getText();
+				scrollPane1.setVisible(false);
+				txtInput.setText("");
+				txtInput.setVisible(true);
+				txtInput.requestFocus();
+			} else input = txtInput.getText();
+			if (input.isEmpty() || input.isBlank())
+				return;
+			txtInput.setText("");
+			inputArea.setText("");
+			revalidate();
+			if (Client.pair.getStatus().equalsIgnoreCase("Online")) {
+				DTO dto = new DTO(Header.MESSAGE_HEADER);
+				dto.setData(input);
+				ClientWorker.requestHandle(dto);
+				appendSend(input, LocalDateTime.now().toString());
+			} else appendSendFail(input, LocalDateTime.now().toString());
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public void startFinding() throws IOException, NullPointerException, InterruptedException {
+		lbWelcome.setText("Finding");
+		DTO dto = new DTO(Header.FIND_CHAT_HEADER);
+		dto.setData(txtName.getText());
+		ClientWorker.requestHandle(dto);
+		int i = 1;
+		int waitTime = 0;
+		isFinding = true;
+		while (isFinding || waitTime < 2000) {
+			btnJoin.setText(("" + i++)
+					.replace("1", "●")
+					.replace("2", "●●")
+					.replace("3", "●●●")
+					.replace("4", "●●●●")
+					.replace("5", "●●●●●"));
+			if (i == 5)
+				i = 1;
+			//noinspection BusyWait
+			Thread.sleep(200);
+			waitTime += 200;
+		}
+		if (Client.pair != null)
+			changeToChat(Client.pair);
+	}
+
+	public void resetLoginPage() {
+		stopChecking("stop");
+		stopFinding();
+		lbAPPIcon.setIcon(new ImageIcon("images/icon.png"));
+		txtName.setEnabled(true);
+		btnJoin.setEnabled(true);
+		btnJoin.setIcon(null);
+		btnJoin.setText("JOIN");
+		btnJoin.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 14));
+		btnQuit.setText("QUIT");
+		lbWelcome.setText("Welcome");
+		lbTitles.setText("What's your name ?");
+	}
+
+	public void appendReceive(String message, String createdDate) {
 		Color bg = new Color(238,241,249);
 		Font font = new Font("Arial", Font.PLAIN, 16);
 		Color fontColor = new Color(0, 0, 0);
 		int fontAlign = SwingConstants.LEFT;
 		int align = FlowLayout.LEFT;
-		appendMessageToBox(message, bg, font, fontColor, fontAlign, align);
+		appendMessageToBox(message, createdDate, bg, font, fontColor, fontAlign, align);
 	}
 
-	public void appendSend(String message) {
+	public void appendSend(String message, String createdDate) {
 		Color bg = new Color(1, 178, 254);
 		Font font = new Font("Arial", Font.PLAIN, 16);
 		Color fontColor = Color.white;
 		int fontAlign = SwingConstants.RIGHT;
 		int align = FlowLayout.RIGHT;
-		appendMessageToBox(message, bg, font, fontColor, fontAlign, align);
+		appendMessageToBox(message, createdDate, bg, font, fontColor, fontAlign, align);
 	}
 
-	public void appendSendFail(String message) {
-		Color bg = new Color(252, 136, 136);
+	public void appendSendFail(String message, String createdDate) {
+		Color bg = new Color(1, 178, 254);
 		Font font = new Font("Arial", Font.PLAIN, 16);
-		Map attributes = font.getAttributes();
-		attributes.put(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
-		Font newFont = new Font(attributes);
-		Color fontColor = Color.lightGray;
+		Color fontColor = Color.BLACK;
 		int fontAlign = SwingConstants.RIGHT;
 		int align = FlowLayout.RIGHT;
-		appendMessageToBox(message, bg, newFont, fontColor, fontAlign, align);
+		appendMessageToBox(message, createdDate, bg, font, fontColor, fontAlign, align);
 	}
 
 	public void appendAlert(String message, boolean isError) {
@@ -394,20 +651,25 @@ public class ClientGUI extends MoveJFrame {
 		Color fontColor = Color.white;
 		int fontAlign = SwingConstants.CENTER;
 		int align = FlowLayout.CENTER;
-		appendMessageToBox(message, bg, font, fontColor, fontAlign, align);
+		appendMessageToBox(message, "", bg, font, fontColor, fontAlign, align);
 	}
 
 	@SuppressWarnings("ConstantConditions")
 	public void appendTimeLine(String time) {
+		LocalDateTime localDateTime = LocalDateTime.parse(time);
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+		time = localDateTime.format(formatter);
 		Color bg = null;
 		Font font = new Font("Arial", Font.PLAIN, 12);
 		Color fontColor = Color.BLACK;
 		int fontAlign = SwingConstants.CENTER;
 		int align = FlowLayout.CENTER;
-		appendMessageToBox(time, bg, font, fontColor, fontAlign, align);
+		appendMessageToBox(time, "", bg, font, fontColor, fontAlign, align);
 	}
 
-	private void appendMessageToBox(String message, Color bg, Font font, Color fontColor, int fontAlign, int align) {
+	private void appendMessageToBox(String message, String createdDate, Color bg, Font font, Color fontColor, int fontAlign, int align) {
+		if (currentPage != CHAT_PAGE)
+			return;
 		message = StringUtils.applyWrapForGUI(message);
 
 		JPanel panel = new JPanel(new FlowLayout(align));
@@ -425,35 +687,70 @@ public class ClientGUI extends MoveJFrame {
 		lbChat.setBackground(bg);
 		lbChat.setOpaque(true);
 		lbChat.setHorizontalAlignment(fontAlign);
-
-		JLabel time = new JLabel("10:34");
-		time.setVisible(false);
-		lbChat.addActionListener(e -> time.setVisible(!time.isVisible()));
+		String time;
+		if (!createdDate.equals("")) {
+			LocalDateTime localDateTime = LocalDateTime.parse(createdDate);
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+			time = localDateTime.format(formatter);
+		}
+		else time = createdDate;
+		JLabel lbTime = new JLabel(time);
+		lbTime.setVisible(false);
+		lbChat.addActionListener(e -> lbTime.setVisible(!lbTime.isVisible()));
 
 		if (align == FlowLayout.RIGHT)
-			panel.add(time);
+			panel.add(lbTime);
+		if (Client.pair.getStatus().equalsIgnoreCase("Offline")) {
+			JLabel lbError = new JLabel(new ImageIcon("images/sendFail.png"));
+			panel.add(lbError);
+			lbChat.setEnabled(false);
+		}
 		panel.add(lbChat);
 		if (align == FlowLayout.LEFT)
-			panel.add(time);
+			panel.add(lbTime);
+		if (isNeedTimeLine && !createdDate.equals("")) {
+			appendTimeLine(createdDate);
+			isNeedTimeLine = false;
+		}
 		jChatPanel.add(panel);
 		jChatPanel.add(Box.createRigidArea(new Dimension(5,0)));
 		jChatPanel.revalidate();
 	}
 
-	public static void main(String[] args) {
-		FlatIntelliJLaf.setup();
-		UIManager.put( "Button.arc", 999 );
-		UIManager.put( "ScrollBar.trackArc", 999 );
-		UIManager.put( "ScrollBar.thumbArc", 999 );
-		UIManager.put( "ScrollBar.trackInsets", new Insets( 2, 4, 2, 4 ) );
-		UIManager.put( "ScrollBar.thumbInsets", new Insets( 2, 2, 2, 2 ) );
-		UIManager.put( "ScrollBar.track", new Color( 0xe0e0e0 ) );
+	public void setInfo(PairInfo info) {
+		try {
+			lbPairName.setText(info.getName());
+			lbPairName2.setText(info.getStatus());
+			if (lbPairName2.getText().equalsIgnoreCase("offline"))
+				lbStatus.setIcon(new ImageIcon("images/remove.png"));
+			else lbStatus.setIcon(new ImageIcon("images/checked.png"));
+		} catch (NullPointerException ignored) {}
+	}
 
-		ClientGUI frame = new ClientGUI();
-		frame.setVisible(true);
+	public void changeToChat(PairInfo info) {
+		if (isChatPage())
+			return;
+		setInfo(info);
+		currentPage = CHAT_PAGE;
+		isNeedTimeLine = true;
+		getContentPane().removeAll();
+		getContentPane().add(chatPane, "card2");
+		appendAlert(info.getName() + " joined the chat", false);
+		getContentPane().revalidate();
+		getContentPane().repaint();
+	}
 
-		Dialog dialog = Dialog.newAlertDialog(frame, "Server Busy !");
-		dialog.setVisible(true);
+	public void changeToLogin() {
+		if (isLoginPage())
+			return;
+		currentPage = LOGIN_PAGE;
+		Client.pair = null;
+		jChatPanel.removeAll();
+		jChatPanel.revalidate();
+		getContentPane().removeAll();
+		getContentPane().add(loginPane, "card1");
+		getContentPane().revalidate();
+		getContentPane().repaint();
 	}
 
 	private JLayeredPane loginPane;

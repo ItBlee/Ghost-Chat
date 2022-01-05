@@ -1,5 +1,6 @@
 package Services;
 
+import Client.PairInfo;
 import Server.User;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -38,7 +39,7 @@ public class JsonParser {
         return dto;
     }
 
-    public static String getUserInfo(User user) {
+    public static String packUserInfo(User user) {
         JsonObject packet = new JsonObject();
         packet.addProperty("name", user.getName());
         packet.addProperty("uid", user.getUID());
@@ -48,5 +49,20 @@ public class JsonParser {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         JsonElement je = com.google.gson.JsonParser.parseString(packet.toString());
         return gson.toJson(je);
+    }
+
+    public static PairInfo unpackUserInfo(String json) {
+        JsonObject packet = com.google.gson.JsonParser.parseString(json).getAsJsonObject();
+        PairInfo info = new PairInfo();
+        info.setName(packet.get("name").getAsString());
+        info.setUid(packet.get("uid").getAsString());
+        info.setStatus(packet.get("status").getAsString());
+        info.setModifiedDate(packet.get("modifiedDate").getAsString());
+        return info;
+    }
+
+    public static History[] getHistoriesFromJson(String json) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.fromJson(json, History[].class);
     }
 }

@@ -1,8 +1,15 @@
 package ClientGUI;
 
+import Client.Client;
+import Client.ClientWorker;
+import Services.DTO;
+import Services.Header;
 import Services.StringUtils;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
 import javax.swing.*;
 import javax.swing.border.*;
 
@@ -10,17 +17,24 @@ import javax.swing.border.*;
  * @author Tran Long Tuan Vu
  */
 public class Dialog extends JDialog {
+	private static final int AUTO_SKIP_TIME = 10000;
+	private final Window owner;
 	private ImageIcon icon;
 	private Color fontColor;
 	private String content;
 	private String btnOkText;
+	private DTO innerDTO;
 	private String btnCancelText;
 	private boolean isConfirm;
 
-	private Dialog(Window owner, String content, String btnOkText, String btnCancelText, ImageIcon icon, Color fontColor, boolean isConfirm) {
+	private Thread timer;
+
+	private Dialog(Window owner, String content, String btnOkText, DTO innerDTO, String btnCancelText, ImageIcon icon, Color fontColor, boolean isConfirm) {
 		super(owner);
+		this.owner = owner;
 		owner.setEnabled(false);
 
+		this.innerDTO = innerDTO;
 		this.content = content;
 		this.btnOkText = btnOkText;
 		this.btnCancelText = btnCancelText;
@@ -29,6 +43,8 @@ public class Dialog extends JDialog {
 		this.isConfirm = isConfirm;
 
 		initComponents();
+		setVisible(true);
+		setSkipTimer();
 	}
 
 	private void initComponents() {
@@ -99,6 +115,12 @@ public class Dialog extends JDialog {
 				okButton.setBorderPainted(false);
 				okButton.setMargin(new Insets(10, 15, 10, 15));
 				okButton.setOpaque(false);
+				okButton.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						btnOKHandle();
+					}
+				});
 				if (isConfirm)
 					buttonBar.add(okButton);
 
@@ -111,6 +133,12 @@ public class Dialog extends JDialog {
 				cancelButton.setBorderPainted(false);
 				cancelButton.setMargin(new Insets(10, 20, 10, 20));
 				cancelButton.setOpaque(false);
+				cancelButton.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						btnCancelHandle();
+					}
+				});
 				buttonBar.add(cancelButton);
 			}
 			contentPane.add(buttonBar);
@@ -137,15 +165,65 @@ public class Dialog extends JDialog {
 		setLocation(getX(),getY()-140);
 	}
 
+	private void btnOKHandle() {
+		try {
+			owner.setEnabled(true);
+			dispose();
+			DTO dto = new DTO(innerDTO.getHeader());
+			dto.setSender(innerDTO.getSender());
+			dto.setData("true");
+			ClientWorker.requestHandle(dto);
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	private void btnCancelHandle() {
+		owner.setEnabled(true);
+		dispose();
+		if (!innerDTO.getHeader().isEmpty()) {
+			DTO dto = new DTO(innerDTO.getHeader());
+			dto.setSender(innerDTO.getSender());
+			dto.setData("false");
+			try {
+				ClientWorker.requestHandle(dto);
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	private void setSkipTimer() {
+		timer = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					int time = AUTO_SKIP_TIME;
+					String text = cancelButton.getText();
+					while (time > 0) {
+						if (Client.Frame.isChatPage())
+							break;
+						Thread.sleep(AUTO_SKIP_TIME/10);
+						time -= (AUTO_SKIP_TIME/10);
+						cancelButton.setText(text + "(" + (time/1000) + ")");
+					}
+					cancelButton.doClick();
+				} catch (InterruptedException e) {}
+			}
+		});
+		timer.start();
+	}
+
 	@SuppressWarnings("ConstantConditions")
 	public static Dialog newInviteDialog(Window parent, String pairName) {
+		DTO dto = new DTO(Header.INVITE_CHAT_HEADER);
 		ImageIcon icon = new ImageIcon("images/found.png");
 		Color fontColor = new Color(115,170,250);
 		String content = StringUtils.applyWrapForGUI("Invite Friend:\n" + pairName + " ?");
 		String btnOkText = "INVITE";
 		String btnCancelText = "SKIP";
 		boolean isConfirm = true;
-		return new Dialog(parent, content, btnOkText, btnCancelText, icon, fontColor, isConfirm);
+		return new Dialog(parent, content, btnOkText, dto, btnCancelText, icon, fontColor, isConfirm);
 	}
 
 	@SuppressWarnings("ConstantConditions")
@@ -156,18 +234,18 @@ public class Dialog extends JDialog {
 		String btnOkText = null;
 		String btnCancelText = "GOT IT";
 		boolean isConfirm = false;
-		return new Dialog(parent, content, btnOkText, btnCancelText, icon, fontColor, isConfirm);
+		return new Dialog(parent, content, btnOkText, new DTO(""), btnCancelText, icon, fontColor, isConfirm);
 	}
 
 	@SuppressWarnings("ConstantConditions")
-	public static Dialog newAcceptDialog(Window parent, String pairName) {
+	public static Dialog newConfirmDialog(Window parent, DTO dto) {
 		ImageIcon icon = new ImageIcon("images/accept.png");
 		Color fontColor = new Color(115,170,250);
-		String content = StringUtils.applyWrapForGUI("Accept invite:\n" + pairName + " ?");
+		String content = StringUtils.applyWrapForGUI("Accept invite:\n" + dto.getData() + " ?");
 		String btnOkText = "ACCEPT";
 		String btnCancelText = "NO";
 		boolean isConfirm = true;
-		return new Dialog(parent, content, btnOkText, btnCancelText, icon, fontColor, isConfirm);
+		return new Dialog(parent, content, btnOkText, dto, btnCancelText, icon, fontColor, isConfirm);
 	}
 
 	@SuppressWarnings("ConstantConditions")
@@ -178,7 +256,7 @@ public class Dialog extends JDialog {
 		String btnOkText = null;
 		String btnCancelText = "GOT IT";
 		boolean isConfirm = false;
-		return new Dialog(parent, content, btnOkText, btnCancelText, icon, fontColor, isConfirm);
+		return new Dialog(parent, content, btnOkText, new DTO(""), btnCancelText, icon, fontColor, isConfirm);
 	}
 
 	private JPanel dialogPane;
