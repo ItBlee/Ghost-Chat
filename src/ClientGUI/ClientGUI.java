@@ -2,9 +2,9 @@ package ClientGUI;
 
 import Client.Client;
 import Client.ClientWorker;
-import Client.PairInfo;
-import Services.DTO;
-import Services.Header;
+import Model.PairInfo;
+import Model.DTO;
+import Model.Header;
 import Services.StringUtils;
 
 import java.awt.*;
@@ -21,11 +21,14 @@ import javax.swing.event.DocumentListener;
  * @author Tran Long Tuan Vu
  */
 public class ClientGUI extends MoveJFrame {
-	private static final int LOGIN_PAGE = 0;
-	private static final int CHAT_PAGE = 1;
-	private static final int LIMIT_MESSAGE_LINE = 40;
-	private static final int LIMIT_INPUT_LINE = 30;
-	private static final int AUTO_LEFT_TIME = 20000; //millisecond
+	public static final int LOGIN_PAGE = 0;
+	public static final int CHAT_PAGE = 1;
+	public static final String ACCEPT_REQUEST = "true";
+	public static final String DECLINE_REQUEST = "false";
+	public static final String STOP_REQUEST = "stop";
+	public static final int LIMIT_MESSAGE_LINE = 40;
+	public static final int LIMIT_INPUT_LINE = 30;
+	public static final int AUTO_LEFT_TIME = 20000; //millisecond
 
 	private int scrollBarMaxValue;
 	private int currentPage;
@@ -490,6 +493,8 @@ public class ClientGUI extends MoveJFrame {
 							|| name.isEmpty() || name.isBlank()) {
 						Dialog.newAlertDialog(ClientGUI.this,"Invalid Name");
 						lbTitles.setText("Must less than 10 characters !");
+						txtName.setEnabled(true);
+						btnJoin.setEnabled(true);
 						return;
 					}
 					btnJoin.setFont(btnJoin.getFont().deriveFont(Font.BOLD, 24));
@@ -515,9 +520,9 @@ public class ClientGUI extends MoveJFrame {
 						Thread.sleep(200);
 						waitTime += 200;
 					}
-					if (checkResult.equals("stop"))
+					if (checkResult.equalsIgnoreCase(STOP_REQUEST))
 						return;
-					if (checkResult.equalsIgnoreCase("false")) {
+					if (checkResult.equalsIgnoreCase(DECLINE_REQUEST)) {
 						Dialog.newAlertDialog(ClientGUI.this, "Name Used");
 						resetLoginPage();
 					}
@@ -555,13 +560,11 @@ public class ClientGUI extends MoveJFrame {
 						lbWelcome.setText("Reconnected Failed");
 						lbAPPIcon.setIcon(new ImageIcon("images/icon.png"));
 						Dialog.newAlertDialog(Client.Frame, Client.FAIL_CONNECT);
-						setEnabled(true);
 						txtName.setEnabled(true);
 						btnJoin.setEnabled(true);
 					} catch (UnknownError ignored) {
 						lbWelcome.setText("U GOT BANNED !");
 						lbAPPIcon.setIcon(new ImageIcon("images/icon.png"));
-						setEnabled(true);
 						txtName.setEnabled(true);
 						btnJoin.setEnabled(true);
 					}
@@ -581,7 +584,7 @@ public class ClientGUI extends MoveJFrame {
 			try {
 				DTO dto = new DTO(Header.STOP_FIND_HEADER);
 				ClientWorker.requestHandle(dto);
-				stopChecking("stop");
+				stopChecking(STOP_REQUEST);
 				stopFinding();
 				Thread.sleep(500);
 				resetLoginPage();
@@ -682,7 +685,7 @@ public class ClientGUI extends MoveJFrame {
 
 	//Reset giao diện Login
 	public void resetLoginPage() {
-		stopChecking("stop");
+		stopChecking(STOP_REQUEST);
 		stopFinding();
 		lbAPPIcon.setIcon(new ImageIcon("images/icon.png"));
 		txtName.setEnabled(true);
@@ -691,7 +694,7 @@ public class ClientGUI extends MoveJFrame {
 		btnJoin.setText("JOIN");
 		btnJoin.setFont(new Font("Segoe UI Semibold", Font.PLAIN, 14));
 		btnQuit.setText("QUIT");
-		lbWelcome.setText("Welcome");
+		lbWelcome.setText("   Let's Chat Together");
 		lbTitles.setText("");
 	}
 
@@ -800,7 +803,13 @@ public class ClientGUI extends MoveJFrame {
 		else time = createdDate;
 		JLabel lbTime = new JLabel(time);
 		lbTime.setVisible(false);
-		lbChat.addActionListener(e -> lbTime.setVisible(!lbTime.isVisible()));
+		lbChat.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				lbTime.setVisible(!lbTime.isVisible());
+				StringUtils.copyToClipboard(lbChat.getText());
+			}
+		});
 
 		if (align == FlowLayout.RIGHT)
 			panel.add(lbTime);

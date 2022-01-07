@@ -2,8 +2,8 @@ package ClientGUI;
 
 import Client.Client;
 import Client.ClientWorker;
-import Services.DTO;
-import Services.Header;
+import Model.DTO;
+import Model.Header;
 import Services.StringUtils;
 
 import java.awt.*;
@@ -17,7 +17,7 @@ import javax.swing.border.*;
  * @author Tran Long Tuan Vu
  */
 public class Dialog extends JDialog {
-	private static final int AUTO_SKIP_TIME = 10000; //millisecond
+	public static final int AUTO_SKIP_TIME = 10000; //millisecond
 	private final Window owner;
 	private final ImageIcon icon;
 	private final Color fontColor;
@@ -171,7 +171,7 @@ public class Dialog extends JDialog {
 			dispose();
 			DTO dto = new DTO(innerDTO.getHeader());
 			dto.setSender(innerDTO.getSender());
-			dto.setData("true");
+			dto.setData(ClientGUI.ACCEPT_REQUEST);
 			ClientWorker.requestHandle(dto);
 			timer.interrupt();
 		} catch (IOException ex) {
@@ -185,7 +185,7 @@ public class Dialog extends JDialog {
 		if (!innerDTO.getHeader().isEmpty()) {
 			DTO dto = new DTO(innerDTO.getHeader());
 			dto.setSender(innerDTO.getSender());
-			dto.setData("false");
+			dto.setData(ClientGUI.DECLINE_REQUEST);
 			try {
 				ClientWorker.requestHandle(dto);
 				timer.interrupt();

@@ -1,5 +1,6 @@
 package Server;
 
+import Model.User;
 import Services.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -282,28 +283,21 @@ public class ServerManagerGUI extends JFrame {
     /**
      * Giao diện nhập và xử lý password khi chạy server
      */
-    public static void AuthenticationFrame() {
-        //nhập pass và mở server ở cổng MAIN_PORT(5000)
+    public static void showAuthenticationFrame() {
         JFrame frame = new JFrame("Authentication");
         JLabel lblPassword = new JLabel("Password: ");
-        //lblPassword.setForeground(Color.white);
         JPasswordField pfPassword = new JPasswordField(19);
         DefaultCaret caret = (DefaultCaret) pfPassword.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
-        pfPassword.setText("hellokitty"); // << password ở đây
+        pfPassword.setText("hellokitty"); // << password ở đây << Nhập sẵn để demo cho tiện.
 
-        //pfPassword.setBackground(new Color(61, 72, 96));
-        //pfPassword.setForeground(Color.white);
         lblPassword.setLabelFor(pfPassword);
         JButton btnGet = new JButton("Start");
         btnGet.setMargin(new Insets(5,30,5,30));
-        //btnGet.setBackground(new Color(13, 21, 37));
         btnGet.setFont(new Font("Roboto", Font.BOLD, 14));
-        //btnGet.setForeground(Color.white);
         btnGet.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnGet.setFocusPainted(false);
-
         btnGet.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -322,11 +316,11 @@ public class ServerManagerGUI extends JFrame {
         });
 
         JPanel panel = new JPanel();
-        //panel.setBackground(new Color(13, 21, 37));
         panel.setLayout(new FlowLayout());
         panel.add(lblPassword);
         panel.add(pfPassword);
         panel.add(btnGet);
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
         frame.setSize(300, 140);
@@ -342,7 +336,8 @@ public class ServerManagerGUI extends JFrame {
     }
 
     private void _btnExecuteActionPerformed(ActionEvent evt) {
-        if (messageArea.getText().isEmpty() || messageArea.getText().equalsIgnoreCase(tutorial)) return;
+        if (messageArea.getText().isEmpty() || messageArea.getText().equalsIgnoreCase(tutorial))
+            return;
         if (messageArea.getText().startsWith("#")) {
             String command = messageArea.getText();
 
@@ -406,7 +401,7 @@ public class ServerManagerGUI extends JFrame {
 
     private void sendChat(String message, User to) {
         try {
-            String packet = Server.messageHandle(message, to);
+            String packet = Server.messageOfServerHandle(message, to);
             Socket socket = to.getSocket();
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             out.write(packet);

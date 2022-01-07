@@ -1,4 +1,6 @@
-package Services;
+package Model;
+
+import Services.JsonParser;
 
 import java.util.Objects;
 

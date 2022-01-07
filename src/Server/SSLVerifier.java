@@ -1,6 +1,7 @@
 package Server;
 
-import Security.AES_Encryptor;
+import Model.User;
+import Security.Security;
 
 import javax.net.ssl.SSLSocket;
 import java.io.DataInputStream;
@@ -50,7 +51,7 @@ public class SSLVerifier extends Thread implements Runnable {
                 throw new UnknownServiceException();
             this.uid = UUID.fromString(tokenizer.nextToken());
             this.secretKey = tokenizer.nextToken();
-            if (secretKey.length() != AES_Encryptor.KEY_BIT_LENGTH) //secretKey phải 16 bit
+            if (secretKey.length() != Security.KEY_BIT_LENGTH) //secretKey phải 16 bit
                 throw new UnknownServiceException();
         }
     }

@@ -1,8 +1,5 @@
 package Services;
 
-import Client.ClientWorker;
-import ClientGUI.ClientGUI;
-import ClientGUI.Dialog;
 import org.davidmoten.text.utils.WordWrap;
 
 import java.awt.*;

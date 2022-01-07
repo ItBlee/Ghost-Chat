@@ -2,18 +2,15 @@ package Client;
 
 import ClientGUI.ClientGUI;
 import ClientGUI.Dialog;
-import Security.AES_Encryptor;
+import Security.Security;
 import Services.FileHandler;
 import Services.StringUtils;
 import org.openeuler.com.sun.net.ssl.internal.ssl.Provider;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import javax.security.auth.callback.UnsupportedCallbackException;
 import java.io.*;
 import java.net.Socket;
-import java.net.UnknownServiceException;
-import java.security.Security;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -87,7 +84,7 @@ public class Client {
      * Tạo secretKey cho Client
      */
     public static void create(int index) {
-        secretKey = AES_Encryptor.generate();
+        secretKey = Security.generate();
         System.out.println("new Secret key: " + secretKey);
         String hash = StringUtils.applySha256(UID,secretKey);
         String config = UID + "|" + secretKey  + "|" + hash + "|" + LocalDateTime.now();
@@ -103,7 +100,7 @@ public class Client {
         /*Adding the JSSE (Java Secure Socket Extension) provider which provides SSL and TLS protocols
         and includes functionality for data encryption, server authentication, message integrity,
         and optional client authentication.*/
-        Security.addProvider(new Provider());
+        java.security.Security.addProvider(new Provider());
         //specifing the trustStore file which contains the certificate & public of the server
         System.setProperty("javax.net.ssl.trustStore", CLIENT_SIDE_PATH + TRUST_STORE_NAME);
         //specifing the password of the trustStore file

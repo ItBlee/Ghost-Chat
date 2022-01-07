@@ -1,71 +1,27 @@
 package Services;
 
-import Client.PairInfo;
-import Server.User;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 /**
  * Format Json
  */
 public class JsonParser {
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     /**
      * Đóng gói data packet thành chuỗi dữ liệu JSON
      * @return String - dữ liệu dạng JSON
      */
-    public static String pack(DTO dto) {
-        JsonObject packet = new JsonObject();
-        packet.addProperty("header", dto.getHeader());
-        packet.addProperty("sender", dto.getSender());
-        packet.addProperty("receiver", dto.getReceiver());
-        packet.addProperty("data", dto.getData());
-        packet.addProperty("createdDate", dto.getCreatedDate());
-
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonElement je = com.google.gson.JsonParser.parseString(packet.toString());
-        return gson.toJson(je);
+    public static String pack(Object obj) {
+        return gson.toJson(obj);
     }
 
     /**
      * Khởi tạo data packet cho client từ dữ liệu JSON
      * @param json dữ liệu dạng JSON
+     * @param classOfT Object T muốn unpack
      */
-    public static DTO unpack(String json) {
-        JsonObject packet = com.google.gson.JsonParser.parseString(json).getAsJsonObject();
-        DTO dto = new DTO(packet.get("header").getAsString());
-        dto.setSender(packet.get("sender").getAsString());
-        dto.setReceiver(packet.get("receiver").getAsString());
-        dto.setData(packet.get("data").getAsString());
-        dto.setCreatedDate(packet.get("createdDate").getAsString());
-        return dto;
-    }
-
-    public static String packUserInfo(User user) {
-        JsonObject packet = new JsonObject();
-        packet.addProperty("name", user.getWorker().getMyName());
-        packet.addProperty("uid", user.getUID());
-        packet.addProperty("status", user.getStatus());
-        packet.addProperty("modifiedDate", user.getModifiedDate());
-
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        JsonElement je = com.google.gson.JsonParser.parseString(packet.toString());
-        return gson.toJson(je);
-    }
-
-    public static PairInfo unpackUserInfo(String json) {
-        JsonObject packet = com.google.gson.JsonParser.parseString(json).getAsJsonObject();
-        PairInfo info = new PairInfo();
-        info.setName(packet.get("name").getAsString());
-        info.setUid(packet.get("uid").getAsString());
-        info.setStatus(packet.get("status").getAsString());
-        info.setModifiedDate(packet.get("modifiedDate").getAsString());
-        return info;
-    }
-
-    public static History[] getHistoriesFromJson(String json) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        return gson.fromJson(json, History[].class);
+    public static <T> T unpack(String json, Class<T> classOfT) {
+        return gson.fromJson(json, classOfT);
     }
 }

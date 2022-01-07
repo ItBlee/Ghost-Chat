@@ -1,7 +1,11 @@
 package Client;
 
 import ClientGUI.Dialog;
-import Security.AES_Encryptor;
+import Model.DTO;
+import Model.Header;
+import Model.History;
+import Model.PairInfo;
+import Security.Security;
 import Services.*;
 
 import javax.swing.*;
@@ -57,7 +61,7 @@ public class ClientWorker extends Thread implements Runnable {
         currentPacket.setCreatedDate(LocalDateTime.now().toString());
         String output = JsonParser.pack(currentPacket);
         System.out.println("Sent: " + output);
-        Client.send(AES_Encryptor.encrypt(output, Client.secretKey)); //mã hóa bằng secret key trước khi gửi
+        Client.send(Security.encrypt(output, Client.secretKey)); //mã hóa bằng secret key trước khi gửi
     }
 
     /**
@@ -103,7 +107,7 @@ public class ClientWorker extends Thread implements Runnable {
             return null;
         }
 
-        DTO dto = JsonParser.unpack(AES_Encryptor.decrypt(data, Client.secretKey)); //giả mã bằng secret key
+        DTO dto = JsonParser.unpack(Security.decrypt(data, Client.secretKey), DTO.class); //giả mã bằng secret key
         System.out.println("Received: " + JsonParser.pack(dto) + "\n");
         switch (dto.getHeader()) {
             case Header.MESSAGE_HEADER:
@@ -122,7 +126,7 @@ public class ClientWorker extends Thread implements Runnable {
             case Header.HISTORY_RECOVERY_HEADER:
                 if (!Client.Frame.isChatPage())
                     return null;
-                History[] get = JsonParser.getHistoriesFromJson(dto.getData());
+                History[] get = JsonParser.unpack(dto.getData(), History[].class);
                 histories = new ArrayList<>(Arrays.asList(get));
                 for (History history : histories) {
                     if (history.getSender().equals(name))
@@ -169,7 +173,7 @@ public class ClientWorker extends Thread implements Runnable {
                 return null;
 
             case Header.USER_INFO_HEADER:
-                pair = JsonParser.unpackUserInfo(dto.getData());
+                pair = JsonParser.unpack(dto.getData(), PairInfo.class);
                 return null;
 
             case Header.NAME_CHECK_HEADER:

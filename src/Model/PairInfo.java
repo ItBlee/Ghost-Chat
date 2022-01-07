@@ -1,4 +1,4 @@
-package Client;
+package Model;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -49,9 +49,12 @@ public class PairInfo {
 
     @Override
     public String toString() {
-        LocalDateTime localDateTime = LocalDateTime.parse(modifiedDate);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        String time = localDateTime.format(formatter);
+        String time = "";
+        try {
+            LocalDateTime localDateTime = LocalDateTime.parse(modifiedDate);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            time = localDateTime.format(formatter);
+        } catch (NullPointerException ignored) {}
         return "Name: " + name + "\n" +
                 "UID: " + uid + "\n" +
                 "Status: " + status + "\n" +

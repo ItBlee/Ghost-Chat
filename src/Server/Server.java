@@ -1,9 +1,10 @@
 package Server;
 
-import Services.DTO;
+import Model.DTO;
+import Model.User;
 import Services.StringUtils;
-import Security.AES_Encryptor;
-import Services.Header;
+import Security.Security;
+import Model.Header;
 import com.google.gson.JsonParser;
 import org.openeuler.com.sun.net.ssl.internal.ssl.Provider;
 
@@ -15,14 +16,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.Key;
 import java.security.KeyStore;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 
 public class Server {
     public static final int MAIN_PORT = 5000;
@@ -40,11 +39,11 @@ public class Server {
     public static final HashMap<String, String> banList = new HashMap<>();
 
     public static Thread timer;
-    public static final float TIMER_LOOP = 10f;         //đơn vị phút
+    public static final float DEFAULT_TIMER_LOOP = 10f;         //đơn vị phút
     public static final float TIMER_SESSION = 60f;      //đơn vị phút
 
     public static ExecutorService sslExecutor;
-    public static ThreadPoolExecutor executor;
+    public static ExecutorService executor;
     public static final int EXECUTOR_CORE = 3;          //Số thread một lúc
     public static final int EXECUTOR_MAX = 5;           //số thread tối đa khi server quá tải
     public static final int EXECUTOR_ALIVE_TIME = 1;    //thời gian một thread được sống nếu không làm gì
@@ -53,12 +52,12 @@ public class Server {
     public static final String RENEW_USER_SESSION = "Renewed";
     public static final int SESSION_EXPIRED_TIME = -1;
 
-    private static final String KEY_STORE_NAME = "myKeyStore.jks";
+    public static final String KEY_STORE_NAME = "myKeyStore.jks";  //store lưu private Key + public Key + chứng chỉ.
     public static final String SERVER_SIDE_PATH = "workspace/Server.Side/";
-    private static final String KEY_STORE_ALIAS = "mykey";
+    public static final String KEY_STORE_ALIAS = "mykey";
     public static final String KEY_STORE_PASSWORD_HASH = "0b1957259ce60db4f9cb5c51cb76a000cefe7234f922a515f56b977951eb6f84";
     public static final String KEY_STORE_PASSWORD_SALT = "5ae877676f3efe25";
-    private static final boolean SSL_DEBUG_ENABLE = false;
+    public static final boolean SSL_DEBUG_ENABLE = false;
 
     /**
      * Khai báo bảo mật cho SSL Socket với Java Secure Socket Extension
@@ -68,7 +67,7 @@ public class Server {
         /*Adding the JSSE (Java Secure Socket Extension) provider which provides SSL and TLS protocols
         and includes functionality for data encryption, server authentication, message integrity,
         and optional client authentication.*/
-        Security.addProvider(new Provider());
+        java.security.Security.addProvider(new Provider());
         //specifing the keystore file which contains the certificate/public key and the private key
         System.setProperty("javax.net.ssl.keyStore", SERVER_SIDE_PATH + KEY_STORE_NAME);
         //specifing the password of the keystore file
@@ -106,9 +105,9 @@ public class Server {
     }
 
     /**
-     * Gửi message đến Client
+     * Gửi message của Server đến Client
      */
-    public static String messageHandle(String message, User to) {
+    public static String messageOfServerHandle(String message, User to) {
         DTO serverPacket = new DTO(Header.MESSAGE_SERVER_HEADER);
         serverPacket.setSender("Server");
         serverPacket.setReceiver(to.getUID());
@@ -117,7 +116,7 @@ public class Server {
         to.addRequestList(JsonParser.parseString("{ \"header\": " + Header.MESSAGE_SERVER_HEADER + " }").toString());
         to.addResponseList(Services.JsonParser.pack(serverPacket));
         to.addDateList(LocalDateTime.now().toString());
-        return AES_Encryptor.encrypt(Services.JsonParser.pack(serverPacket), to.getSecretKey()); //mã hóa bằng secret key trước khi gửi
+        return Security.encrypt(Services.JsonParser.pack(serverPacket), to.getSecretKey()); //mã hóa bằng secret key trước khi gửi
     }
 
     /**

@@ -1,4 +1,4 @@
-package Services;
+package Model;
 
 /**
  * Object lịch sử

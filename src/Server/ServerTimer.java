@@ -1,5 +1,7 @@
 package Server;
 
+import Model.User;
+
 public class ServerTimer extends Thread{
     private final long loopTime; //Thời gian quét sau mỗi n phút
     private final long sessionTime; //Thời gian cho 1 phiên làm việc của Client

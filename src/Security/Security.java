@@ -9,7 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.UUID;
 
-public class AES_Encryptor {
+public class Security {
     public static final String ALGORITHM = "AES";
     public static final int KEY_BIT_LENGTH = 16; //secretKey phải 16 bit
 

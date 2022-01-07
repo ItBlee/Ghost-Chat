@@ -1,8 +1,9 @@
 package Server;
 
-import Services.DTO;
-import Services.Header;
-import Services.History;
+import Model.DTO;
+import Model.Header;
+import Model.History;
+import Model.User;
 import Services.JsonParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -11,7 +12,10 @@ import com.google.gson.JsonArray;
 import java.io.IOException;
 import java.util.*;
 
-public class WorkerPair extends Thread implements Runnable{
+public class PairMaker extends Thread implements Runnable {
+    public static final int REQUEST_LIMIT_WAIT_TIME = 10000;
+    public static final String ACCEPT_REQUEST = "true";
+    public static final String DECLINE_REQUEST = "false";
     private final Worker parent;
 
     private boolean isAllowInvite = false;
@@ -19,7 +23,7 @@ public class WorkerPair extends Thread implements Runnable{
     private boolean isConfirmInvite = false;
     private String replyConfirm = "";
 
-    public WorkerPair(Worker parent) {
+    public PairMaker(Worker parent) {
         this.parent = parent;
     }
 
@@ -63,13 +67,13 @@ public class WorkerPair extends Thread implements Runnable{
                 //Chờ phản hồi
                 int waitTime = 0;
                 while (!isAllowInvite) {
-                    Thread.sleep(1000);
-                    waitTime += 1000;
-                    if (waitTime == 10000)
-                        replyInvite("false");
+                    Thread.sleep(REQUEST_LIMIT_WAIT_TIME/10);
+                    waitTime += REQUEST_LIMIT_WAIT_TIME/10;
+                    if (waitTime == REQUEST_LIMIT_WAIT_TIME) //Quá thời gian chờ tự động từ chối.
+                        replyInvite(DECLINE_REQUEST);
                 }
                 //Nếu True tức đồng ý ghép
-                if (replyInvite.equals("true")) {
+                if (replyInvite.equalsIgnoreCase(ACCEPT_REQUEST)) {
                     //Nếu người đó đã ghép với người khác thì báo lại "fail"
                     if (randomUser.getWorker().isPaired()) {
                         replyFail();
@@ -85,13 +89,13 @@ public class WorkerPair extends Thread implements Runnable{
                     //Chờ phản hồi
                     waitTime = 0;
                     while (!isConfirmInvite) {
-                        Thread.sleep(1000);
-                        waitTime += 1000;
-                        if (waitTime == 10000)
-                            replyConfirm("false");
+                        Thread.sleep(REQUEST_LIMIT_WAIT_TIME/10);
+                        waitTime += REQUEST_LIMIT_WAIT_TIME/10;
+                        if (waitTime == REQUEST_LIMIT_WAIT_TIME) //Quá thời gian chờ tự động từ chối.
+                            replyConfirm(DECLINE_REQUEST);
                     }
                     //Nếu True tức đồng ý ghép
-                    if (replyConfirm.equals("true")) {
+                    if (replyConfirm.equalsIgnoreCase(ACCEPT_REQUEST)) {
                         //Thực hiện ghép cặp
                         doPair(randomUser);
                         sleep(500);
@@ -100,8 +104,6 @@ public class WorkerPair extends Thread implements Runnable{
                         break;
                     }
                     else {
-                        //người muốn ghép không đồng ý thì mở khóa và thêm họ vào danh sách từ chối.
-                        randomUser.getWorker().unlockPair();
                         parent.getDenied().add(randomUser.getWorker().getMyName());
                         replyFail();
                     }
@@ -128,7 +130,6 @@ public class WorkerPair extends Thread implements Runnable{
         Vector<User> temp = new Vector<>(Server.queue);
         if (temp.isEmpty())
             return null;
-
         //Xóa những người đã từ chối.
         temp.removeIf(user -> parent.getDenied().contains(user.getWorker().getMyName()));
         if (!temp.isEmpty()) {
@@ -141,46 +142,46 @@ public class WorkerPair extends Thread implements Runnable{
 
     /**
      * Thực hiện ghép cặp khi cả 2 bên đồng ý
-     * @param withUser - với ai
+     * @param to - với ai
      */
-    public void doPair(User withUser) throws IOException {
+    public void doPair(User to) throws IOException {
         //Xóa khỏi hàng chờ
-        Server.queue.remove(withUser);
+        Server.queue.remove(to);
         System.out.println(Server.queue);
         //lock đối tượng
         parent.lockPair();
-        parent.pairWith(withUser);
-        withUser.getWorker().lockPair();
-        withUser.getWorker().pairWith(parent.getUser());
+        parent.pairWith(to);
+        to.getWorker().lockPair();
+        to.getWorker().pairWith(parent.getUser());
         //Send xác nhận kết nói
         DTO dto = new DTO(Header.PAIRED_CHAT_HEADER);
-        dto.setData(withUser.getWorker().getMyName());
+        dto.setData(to.getWorker().getMyName());
         parent.responseHandle(dto);
         dto.setData(parent.getMyName());
-        withUser.getWorker().responseHandle(dto);
-        System.out.println("Paired " + parent.getMyName() + " with " + withUser.getWorker().getMyName());
+        to.getWorker().responseHandle(dto);
+        System.out.println("Paired " + parent.getMyName() + " with " + to.getWorker().getMyName());
     }
 
     /**
      * Lấy lịch sử chat giữa 2 người dùng từ lịch sử của người thực hiện ghép cặp.
-     * @param chatWith - với ai
+     * @param to - với ai
      */
-    public void loadHistoryChat(User chatWith) throws IOException, IllegalStateException {
+    public void loadHistoryChat(User to) throws IOException, IllegalStateException {
         //Khởi tạo nếu chưa tồn tại
-        if (!parent.getHistories().containsKey(chatWith))
-            parent.getHistories().put(chatWith, new ArrayList<>());
-        if (!chatWith.getWorker().getHistories().containsKey(parent.getUser()))
-            chatWith.getWorker().getHistories().put(parent.getUser(), new ArrayList<>());
+        if (!parent.getHistories().containsKey(to))
+            parent.getHistories().put(to, new ArrayList<>());
+        if (!to.getWorker().getHistories().containsKey(parent.getUser()))
+            to.getWorker().getHistories().put(parent.getUser(), new ArrayList<>());
 
         //Bỏ qua nếu lịch sử 1 bên rỗng.
-        if (parent.getHistories().get(chatWith).isEmpty()
-        ||  chatWith.getWorker().getHistories().get(parent.getUser()).isEmpty())
+        if (parent.getHistories().get(to).isEmpty()
+        ||  to.getWorker().getHistories().get(parent.getUser()).isEmpty())
             return;
 
         //Gộp lịch sử 2 bên
-        ArrayList<History> restore = new ArrayList<>(parent.getHistories().get(chatWith));
-        if (restore.removeAll(chatWith.getWorker().getHistories().get(parent.getUser())))
-            restore.addAll(chatWith.getWorker().getHistories().get(parent.getUser()));
+        ArrayList<History> restore = new ArrayList<>(parent.getHistories().get(to));
+        if (restore.removeAll(to.getWorker().getHistories().get(parent.getUser())))
+            restore.addAll(to.getWorker().getHistories().get(parent.getUser()));
 
         //Format thành json
         Gson gson = new GsonBuilder().create();
@@ -191,7 +192,7 @@ public class WorkerPair extends Thread implements Runnable{
 
         //Send cho cả 2 đối tượng
         parent.responseHandle(dto);
-        chatWith.getWorker().responseHandle(dto);
+        to.getWorker().responseHandle(dto);
     }
 
     /**
@@ -199,9 +200,9 @@ public class WorkerPair extends Thread implements Runnable{
      */
     public void transferInfo(User user1, User user2) throws IOException {
         DTO infoDTO = new DTO(Header.USER_INFO_HEADER);
-        infoDTO.setData(JsonParser.packUserInfo(user2));
+        infoDTO.setData(JsonParser.pack(user2));
         user1.getWorker().responseHandle(infoDTO);
-        infoDTO.setData(JsonParser.packUserInfo(user1));
+        infoDTO.setData(JsonParser.pack(user1));
         user2.getWorker().responseHandle(infoDTO);
     }
 }

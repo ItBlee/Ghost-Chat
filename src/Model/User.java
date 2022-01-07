@@ -1,4 +1,6 @@
-package Server;
+package Model;
+
+import Server.Worker;
 
 import java.net.Socket;
 import java.util.*;

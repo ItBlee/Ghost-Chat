@@ -10,18 +10,11 @@ import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
-import java.net.UnknownServiceException;
 
 public class Main {
     public static void main(String[] args) {
-        //System.err.close();
-
         //Khởi tạo giao diện
         FlatIntelliJLaf.setup();
-        FlatLightLaf.installLafInfo();
-        FlatDarkLaf.installLafInfo();
-        FlatIntelliJLaf.installLafInfo();
-        FlatDarculaLaf.installLafInfo();
         UIManager.put( "Button.arc", 999 );
         UIManager.put( "ScrollBar.trackArc", 999 );
         UIManager.put( "ScrollBar.thumbArc", 999 );
