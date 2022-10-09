@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>ChatAPP</artifactId>
+        <groupId>com.tvprojects</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>Shared</artifactId>
+
+    <properties>
+        <maven.compiler.source>14</maven.compiler.source>
+        <maven.compiler.target>14</maven.compiler.target>
+        <jsse.version>1.0.4.1</jsse.version>
+        <gson.version>2.9.0</gson.version>
+        <word-wrap.version>0.1.9</word-wrap.version>
+        <flatlaf.version>2.4</flatlaf.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.openeuler</groupId>
+            <artifactId>jsse</artifactId>
+            <version>${jsse.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.davidmoten</groupId>
+            <artifactId>word-wrap</artifactId>
+            <version>${word-wrap.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>${flatlaf.version}</version>
+        </dependency>
+    </dependencies>
+
+</project>
