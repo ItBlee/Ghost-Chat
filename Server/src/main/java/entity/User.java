@@ -1,16 +1,12 @@
-package model;
+package entity;
 
-import java.util.Date;
-
-public class UserModel {
+public class User extends BaseEntity {
     private String username;
-    private String passwordSalt;
     private String passwordHash;
-    private Date createdDate;
-    private Date modifiedDate;
+    private String passwordSalt;
     private Boolean status;
 
-    public UserModel() {
+    public User() {
     }
 
     public String getUsername() {
@@ -35,22 +31,6 @@ public class UserModel {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
-    }
-
-    public Date getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(Date createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public Date getModifiedDate() {
-        return modifiedDate;
-    }
-
-    public void setModifiedDate(Date modifiedDate) {
-        this.modifiedDate = modifiedDate;
     }
 
     public Boolean getStatus() {

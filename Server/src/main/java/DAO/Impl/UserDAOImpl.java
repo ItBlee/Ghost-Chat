@@ -1,7 +1,11 @@
 package DAO.Impl;
 
 import DAO.UserDAO;
-import model.UserModel;
+import entity.User;
 
-public class UserDAOImpl extends AbstractDAO<UserModel> implements UserDAO {
+public class UserDAOImpl extends MongoDAO<User> implements UserDAO {
+
+    public UserDAOImpl() {
+        super("user");
+    }
 }

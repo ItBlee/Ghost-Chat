@@ -8,7 +8,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Random;
 import java.util.UUID;
 
 public class SecurityUtil {
@@ -27,6 +29,39 @@ public class SecurityUtil {
             secretKey = Long.toHexString(ByteBuffer.wrap(salt.digest()).getLong());
         } while (secretKey.length() != KEY_BIT_LENGTH);
         return new SecretKey(secretKey);
+    }
+
+    /**
+     * Tạo salt cho hash password
+     *
+     * @return a 16 bytes random salt
+     */
+    public static String getSalt() {
+        Random random = new SecureRandom();
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        return new String(salt);
+    }
+
+    /**
+     * Hàm băm chuỗi
+     */
+    public static String applySha256(String str, String strSalt) {
+        String hashString;
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(strSalt.getBytes());
+            byte[] bytes = md.digest(str.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte aByte : bytes)
+                sb.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
+            hashString = sb.toString();
+        }
+        catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return "";
+        }
+        return hashString;
     }
 
     /**

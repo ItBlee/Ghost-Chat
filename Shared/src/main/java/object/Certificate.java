@@ -1,22 +1,21 @@
 package object;
 
 import java.util.Objects;
-import java.util.UUID;
 
 public final class Certificate {
-    private final UUID uid;
+    private final String uid;
     private final String username;
     private final SecretKey secretKey;
     private boolean isAuthenticated;
 
-    public Certificate(UUID uuid, String username, SecretKey secretKey) {
+    public Certificate(String uuid, String username, SecretKey secretKey) {
         this.uid = uuid;
         this.username = username;
         this.secretKey = secretKey;
         this.isAuthenticated = false;
     }
 
-    public UUID getUid() {
+    public String getUid() {
         return uid;
     }
 

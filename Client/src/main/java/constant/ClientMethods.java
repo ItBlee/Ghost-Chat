@@ -1,16 +1,15 @@
 package constant;
 
-import object.Certificate;
 import com.sun.jdi.connect.spi.ClosedConnectionException;
 import core.Launcher;
 import object.*;
 import utils.ObjectUtil;
+import utils.StringUtil;
 import worker.Impl.SecureWorker;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 public final class ClientMethods {
     public static final Map<Header, Executable> methods;
@@ -31,14 +30,10 @@ public final class ClientMethods {
                 SecureWorker worker = ObjectUtil.getFirstFromArray(data, SecureWorker.class);
                 Packet packet = ObjectUtil.getFirstFromArray(data, Packet.class);
                 if (packet.getData().get(DataKey.STATUS_CODE).equals(StatusCode.OK)) {
-                    UUID uid;
-                    try {
-                        uid = UUID.fromString(packet.getData().get(DataKey.SENDER));
-                    } catch (IllegalArgumentException e) {
-                        e.printStackTrace();
-                        throw new IllegalArgumentException("Wrong UID format !");
-                    }
+                    String uid = packet.getData().get(DataKey.UID);
                     String username = packet.getData().get(DataKey.USERNAME);
+                    if (StringUtil.isNullOrEmpty(uid) || StringUtil.isNullOrEmpty(username))
+                        throw new Exception("Authenticate Failed !");
                     Certificate certificate = new Certificate(uid, username, worker.getSecretKey());
                     certificate.setAuthenticated(true);
                     Launcher.getInstance().setCertificate(certificate);

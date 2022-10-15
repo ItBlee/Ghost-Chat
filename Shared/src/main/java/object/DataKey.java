@@ -3,7 +3,8 @@ package object;
 import java.util.Objects;
 
 public final class DataKey {
-    public static final DataKey SENDER = new DataKey("uid");
+    public static final DataKey UID = new DataKey("uid");
+    public static final DataKey SENDER = new DataKey("sender");
     public static final DataKey STATUS_CODE = new DataKey("code");
     public static final DataKey SECRET_KEY = new DataKey("sk");
     public static final DataKey USERNAME = new DataKey("un");

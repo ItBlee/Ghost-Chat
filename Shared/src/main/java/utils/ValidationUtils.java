@@ -11,10 +11,16 @@ public class ValidationUtils {
             return false;
         if (StringUtil.isNullOrEmpty(certificate.getSecretKey().getKey()))
             return false;
-        if (certificate.getUid() == null
-            || certificate.getSecretKey() == null
-            || StringUtil.isNullOrEmpty(certificate.getUsername()))
+        if (certificate.getUid() == null || StringUtil.isNullOrEmpty(certificate.getUsername()))
             return false;
         return true;
     }
+
+    public static boolean isValidUsername(String username) {
+        return true;
+    }
+    public static boolean isValidPassword(String password) {
+        return true;
+    }
+
 }

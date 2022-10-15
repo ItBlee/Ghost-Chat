@@ -1,4 +1,6 @@
 package DAO;
 
-public interface UserDAO {
+import entity.User;
+
+public interface UserDAO extends GenericDAO<User> {
 }

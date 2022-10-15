@@ -13,4 +13,11 @@ public final class ServerConstant {
     public static final boolean SSL_DEBUG_ENABLE = false;
     public static final String RENEW_USER_SESSION = "Renewed";
     public static final int SESSION_EXPIRED_TIME = -1;
+
+    public static final String DB_NAME = "";
+    public static final String DB_HOST = null;
+    public static final Integer DB_PORT = null;
+    public static final String DB_USERNAME = null;
+    public static final String DB_PASSWORD = null;
+
 }

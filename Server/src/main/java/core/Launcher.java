@@ -25,17 +25,17 @@ public class Launcher {
 
     private final Set<PairWorker<Worker>> listenWorkers;
     private final Set<SecureWorker> sessionWorkers;
-    private final Map<UUID, String> sessions;
+    private final Map<String, String> sessions;
 
-    private Thread accepter;
-    private Thread secureAccepter;
+    private Thread dispatcher;
+    private Thread secureDispatcher;
 
     private Launcher(Server server, Server serverSecure) {
         this.server = server;
         this.secureServer = serverSecure;
         listenWorkers = Collections.synchronizedSet(new HashSet<PairWorker<Worker>>());
         sessionWorkers = Collections.synchronizedSet(new HashSet<SecureWorker>());
-        sessions = Collections.synchronizedMap(new HashMap<UUID, String>());
+        sessions = Collections.synchronizedMap(new HashMap<String, String>());
     }
 
     public static synchronized Launcher init(Server server, Server serverSecure) {
@@ -63,7 +63,7 @@ public class Launcher {
             secureServer.openSecure(password);
         } catch (ServerException ignored) {}
         {
-            secureAccepter = new Thread(new Runnable() {
+            secureDispatcher = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     ExecutorService executor = new ThreadPoolExecutor(
@@ -74,7 +74,7 @@ public class Launcher {
                             new ArrayBlockingQueue<>(EXECUTOR_CAPACITY),
                             new ThreadPoolExecutor.CallerRunsPolicy()
                     );
-                    while (!secureAccepter.isInterrupted() && !secureServer.isClosed()) {
+                    while (!secureDispatcher.isInterrupted() && !secureServer.isClosed()) {
                         try {
                             synchronized (secureServer) {
                                 SSLSocket sslSocket = (SSLSocket) secureServer.accept();
@@ -88,14 +88,14 @@ public class Launcher {
                     }
                 }
             });
-            secureAccepter.start();
+            secureDispatcher.start();
         }
 
         try {
             server.open();
         } catch (ServerException ignored) {}
         {
-            accepter = new Thread(new Runnable() {
+            dispatcher = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     System.out.println("Server ready to accept connections.\n");
@@ -107,7 +107,7 @@ public class Launcher {
                             new ArrayBlockingQueue<>(EXECUTOR_CAPACITY),
                             new ThreadPoolExecutor.CallerRunsPolicy()
                     ); //Blocking queue để cho request đợi
-                    while (!accepter.isInterrupted() && !server.isClosed()) {
+                    while (!dispatcher.isInterrupted() && !server.isClosed()) {
                         try {
                             synchronized (server) {
                                 Socket socket = server.accept();
@@ -121,7 +121,7 @@ public class Launcher {
                     }
                 }
             });
-            accepter.start();
+            dispatcher.start();
         }
     }
 
@@ -136,10 +136,10 @@ public class Launcher {
         }
         if (sessions != null && !sessions.isEmpty())
             sessions.clear();
-        if (accepter != null && accepter.isAlive())
-            accepter.interrupt();
-        if (secureAccepter != null && secureAccepter.isAlive())
-            secureAccepter.interrupt();
+        if (dispatcher != null && dispatcher.isAlive())
+            dispatcher.interrupt();
+        if (secureDispatcher != null && secureDispatcher.isAlive())
+            secureDispatcher.interrupt();
         if (server != null)
             server.close();
         if (secureServer != null)
@@ -162,7 +162,7 @@ public class Launcher {
         return null;
     }
 
-    public synchronized Map<UUID, String> getSessions() {
+    public synchronized Map<String, String> getSessions() {
         return sessions;
     }
 }

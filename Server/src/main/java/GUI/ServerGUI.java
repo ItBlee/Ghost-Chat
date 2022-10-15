@@ -647,7 +647,7 @@ public class ServerGUI extends JFrame {
     /**
      * Gửi message của Server đến core.Client
      */
-    public static String messageOfServerHandle(String message, User to) {
+    public static String messageOfServerHandle(String message, AAUser to) {
         DTO serverPacket = new DTO(Header.MESSAGE_SERVER););
         serverPacket.setSender("Server");
         serverPacket.setReceiver(to.getUID());

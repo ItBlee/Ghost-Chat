@@ -19,6 +19,8 @@
         <gson.version>2.9.0</gson.version>
         <word-wrap.version>0.1.9</word-wrap.version>
         <flatlaf.version>2.4</flatlaf.version>
+        <log4j.api.version>2.19.0</log4j.api.version>
+        <log4j.core.version>2.19.0</log4j.core.version>
     </properties>
 
     <dependencies>
@@ -41,6 +43,16 @@
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
             <version>${flatlaf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.core.version}</version>
         </dependency>
     </dependencies>
 

@@ -19,6 +19,11 @@
     <orderEntry type="library" name="Maven: com.github.davidmoten:word-wrap:0.1.9" level="project" />
     <orderEntry type="library" name="Maven: com.github.davidmoten:guava-mini:0.1.3" level="project" />
     <orderEntry type="library" name="Maven: com.formdev:flatlaf:2.4" level="project" />
-    <orderEntry type="library" name="Maven: org.mongodb:mongo-java-driver:3.12.11" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-api:2.19.0" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.logging.log4j:log4j-core:2.19.0" level="project" />
+    <orderEntry type="library" name="Maven: org.mongodb:mongodb-driver-sync:4.7.1" level="project" />
+    <orderEntry type="library" name="Maven: org.mongodb:bson:4.7.1" level="project" />
+    <orderEntry type="library" name="Maven: org.mongodb:mongodb-driver-core:4.7.1" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.mongodb:bson-record-codec:4.7.1" level="project" />
   </component>
 </module>

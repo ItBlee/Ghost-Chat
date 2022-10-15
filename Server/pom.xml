@@ -16,7 +16,7 @@
         <maven.compiler.source>14</maven.compiler.source>
         <maven.compiler.target>14</maven.compiler.target>
         <shared.version>1.0-SNAPSHOT</shared.version>
-        <mongodb.version>3.12.11</mongodb.version>
+        <mongodb.version>4.7.1</mongodb.version>
     </properties>
 
     <dependencies>
@@ -27,7 +27,7 @@
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
+            <artifactId>mongodb-driver-sync</artifactId>
             <version>${mongodb.version}</version>
         </dependency>
     </dependencies>
