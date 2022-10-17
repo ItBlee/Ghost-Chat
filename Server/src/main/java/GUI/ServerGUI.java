@@ -1,8 +1,8 @@
 package GUI;
 
 import Server.Core.Server;
-import object.Header;
-import utils.SecurityUtil;
+import tranfer.Header;
+import security.SecurityUtil;
 import utils.StringUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

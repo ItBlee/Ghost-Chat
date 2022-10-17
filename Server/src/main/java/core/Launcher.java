@@ -1,41 +1,28 @@
 package core;
 
 import constant.ServerMethods;
-import worker.Impl.WorkerImpl;
-import worker.Impl.PairWorker;
-import worker.Impl.SecureWorker;
-import worker.Worker;
+import security.Certificate;
 
-import javax.net.ssl.SSLSocket;
 import java.io.IOException;
-import java.net.Socket;
-import java.rmi.ServerException;
-import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import static constant.ServerConstant.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Launcher {
     private static Launcher launcher;
     private final Server server;
     private final Server secureServer;
 
-    private final Set<PairWorker<Worker>> listenWorkers;
-    private final Set<SecureWorker> sessionWorkers;
-    private final Map<String, String> sessions;
+    private final Set<Certificate> sessions;
 
-    private Thread dispatcher;
-    private Thread secureDispatcher;
+    private Dispatcher dispatcher;
+    private Dispatcher secureDispatcher;
+    private PairDispatcher pairDispatcher;
 
     private Launcher(Server server, Server serverSecure) {
         this.server = server;
         this.secureServer = serverSecure;
-        listenWorkers = Collections.synchronizedSet(new HashSet<PairWorker<Worker>>());
-        sessionWorkers = Collections.synchronizedSet(new HashSet<SecureWorker>());
-        sessions = Collections.synchronizedMap(new HashMap<String, String>());
+        sessions = Collections.synchronizedSet(new HashSet<Certificate>());
     }
 
     public static synchronized Launcher init(Server server, Server serverSecure) {
@@ -58,82 +45,20 @@ public class Launcher {
         return launcher;
     }
 
-    public void setup(String password) throws IOException {
-        try {
-            secureServer.openSecure(password);
-        } catch (ServerException ignored) {}
-        {
-            secureDispatcher = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    ExecutorService executor = new ThreadPoolExecutor(
-                            EXECUTOR_CORE,       //Số thread một lúc
-                            EXECUTOR_MAX,        //số thread tối đa khi server quá tải
-                            EXECUTOR_ALIVE_TIME, //thời gian một thread được sống nếu không làm gì
-                            TimeUnit.MINUTES,    //đơn vị phút
-                            new ArrayBlockingQueue<>(EXECUTOR_CAPACITY),
-                            new ThreadPoolExecutor.CallerRunsPolicy()
-                    );
-                    while (!secureDispatcher.isInterrupted() && !secureServer.isClosed()) {
-                        try {
-                            synchronized (secureServer) {
-                                SSLSocket sslSocket = (SSLSocket) secureServer.accept();
-                                SecureWorker worker = new WorkerImpl<Worker>(sslSocket, ServerMethods.methods);
-                                sessionWorkers.add(worker);
-                                executor.execute(worker);
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-            secureDispatcher.start();
-        }
+    public void launch(String keyStorePassword) throws IOException {
+        server.open();
+        dispatcher = new Dispatcher(server, ServerMethods.methods);
+        dispatcher.start();
 
-        try {
-            server.open();
-        } catch (ServerException ignored) {}
-        {
-            dispatcher = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println("Server ready to accept connections.\n");
-                    ExecutorService executor = new ThreadPoolExecutor(
-                            EXECUTOR_CORE,       //Số thread một lúc
-                            EXECUTOR_MAX,        //số thread tối đa khi server quá tải
-                            EXECUTOR_ALIVE_TIME, //thời gian một thread được sống nếu không làm gì
-                            TimeUnit.MINUTES,    //đơn vị phút
-                            new ArrayBlockingQueue<>(EXECUTOR_CAPACITY),
-                            new ThreadPoolExecutor.CallerRunsPolicy()
-                    ); //Blocking queue để cho request đợi
-                    while (!dispatcher.isInterrupted() && !server.isClosed()) {
-                        try {
-                            synchronized (server) {
-                                Socket socket = server.accept();
-                                PairWorker<Worker> worker = new WorkerImpl<>(socket, ServerMethods.methods);
-                                listenWorkers.add(worker);
-                                executor.execute(worker);
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            });
-            dispatcher.start();
-        }
+        secureServer.openSecure(keyStorePassword);
+        secureDispatcher = new Dispatcher(secureServer, ServerMethods.methods);
+        secureDispatcher.start();
+
+        pairDispatcher = new PairDispatcher();
+        pairDispatcher.start();
     }
 
     public void close() throws IOException {
-        if (listenWorkers != null && !listenWorkers.isEmpty()) {
-            listenWorkers.forEach(Thread::interrupt);
-            listenWorkers.clear();
-        }
-        if (sessionWorkers != null && !sessionWorkers.isEmpty()) {
-            sessionWorkers.forEach(Thread::interrupt);
-            sessionWorkers.clear();
-        }
         if (sessions != null && !sessions.isEmpty())
             sessions.clear();
         if (dispatcher != null && dispatcher.isAlive())
@@ -146,23 +71,7 @@ public class Launcher {
             secureServer.close();
     }
 
-    public synchronized PairWorker<Worker> getListenWorker(String name) {
-        for (PairWorker<Worker> worker:listenWorkers) {
-            if (worker.getWorkerName().equals(name))
-                return worker;
-        }
-        return null;
-    }
-
-    public synchronized SecureWorker getSessionWorker(String name) {
-        for (SecureWorker worker:sessionWorkers) {
-            if (worker.getWorkerName().equals(name))
-                return worker;
-        }
-        return null;
-    }
-
-    public synchronized Map<String, String> getSessions() {
+    public synchronized Set<Certificate> getSessions() {
         return sessions;
     }
 }

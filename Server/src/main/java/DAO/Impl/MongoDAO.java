@@ -10,30 +10,26 @@ import com.mongodb.client.result.InsertManyResult;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
 import entity.BaseEntity;
+import helper.MongoHelper;
 import org.bson.BsonValue;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
-import utils.MongoUtil;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static constant.ServerConstant.*;
-
 public abstract class MongoDAO<T extends BaseEntity> implements GenericDAO<T> {
-    protected final MongoUtil connection;
     protected final MongoCollection<T> collection;
 
     private final Class<T> entityClass;
 
     @SuppressWarnings("ALL")
     public MongoDAO(String collectionName) {
-        connection = new MongoUtil(DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD);
         this.entityClass = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass())
                 .getActualTypeArguments()[0];
-        this.collection = connection.getCollection(collectionName, entityClass);
+        this.collection = MongoHelper.getInstance().getCollection(collectionName, entityClass);
     }
 
     @Override

@@ -1,20 +1,19 @@
-package object;
+package DTO;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 public class UserDTO implements Serializable {
-    private UUID uid;
+    private String uid;
     private String username;
 
     public UserDTO() {
     }
 
-    public UUID getUid() {
+    public String getUid() {
         return uid;
     }
 
-    public void setUid(UUID uid) {
+    public void setUid(String uid) {
         this.uid = uid;
     }
 

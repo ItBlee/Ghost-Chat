@@ -7,8 +7,8 @@ import entity.User;
 import exception.*;
 import org.bson.types.ObjectId;
 import service.UserService;
-import utils.SecurityUtil;
-import utils.ValidationUtils;
+import security.SecurityUtil;
+import utils.ValidationUtil;
 
 public class UserServiceImpl implements UserService {
     private final UserDAO dao;
@@ -26,20 +26,22 @@ public class UserServiceImpl implements UserService {
     public User login(String username, String password) throws ChatAppException {
         Iterable<User> results = dao.findByCondition(Filters.eq("username", username), 1);
         if (!results.iterator().hasNext())
-            throw new NotFoundException("User not found !");
+            throw new NotFoundException("The username is not registered !");
         User user = results.iterator().next();
         if (!SecurityUtil.applySha256(password, user.getPasswordSalt()).equals(user.getPasswordHash()))
             throw new InvalidPasswordException("Wrong user password !");
+        if (!user.getStatus())
+            throw new InvalidStatusException("User is banned !");
         return user;
     }
 
     @Override
     public User register(String username, String password) throws ChatAppException {
         if (isExistUsername(username))
-            throw new UserExistException("User already exist in database !");
-        if (!ValidationUtils.isValidUsername(username))
+            throw new UserExistException("Username already exist !");
+        if (!ValidationUtil.isValidUsername(username))
             throw new InvalidUsernameException("Invalid username !");
-        if (!ValidationUtils.isValidPassword(password))
+        if (!ValidationUtil.isValidPassword(password))
             throw new InvalidPasswordException("Invalid password !");
         String salt = SecurityUtil.getSalt();
         String hash = SecurityUtil.applySha256(password, salt);
@@ -52,7 +54,7 @@ public class UserServiceImpl implements UserService {
         String newId = dao.insertOne(user);
         User inserted = dao.findById(newId);
         if (inserted == null)
-            throw new QueryException("Insert new user failed !");
+            throw new QueryException("Register user failed !");
         return inserted;
     }
 

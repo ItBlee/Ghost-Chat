@@ -1,11 +1,14 @@
 package core;
 
-import java.util.UUID;
+import security.Certificate;
 
 public class Adapter {
 
-    public boolean isRegisteredSession(UUID uuid) {
-        return Launcher.getInstance().getSessions().containsKey(uuid);
+    public boolean isRegisteredSession(String uid) {
+        for (Certificate certificate:Launcher.getInstance().getSessions())
+            if (certificate.getUid().equalsIgnoreCase(uid) && certificate.isAuthenticated())
+                return true;
+        return false;
     }
 
 }

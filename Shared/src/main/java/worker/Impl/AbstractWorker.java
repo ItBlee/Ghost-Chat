@@ -5,7 +5,7 @@ import worker.Worker;
 import java.io.*;
 import java.net.Socket;
 
-public abstract class AbstractWorker extends Thread implements Worker {
+public abstract class AbstractWorker implements Worker {
     protected String uid;
     protected String workerName;
     protected final Socket socket;

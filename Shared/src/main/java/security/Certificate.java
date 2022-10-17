@@ -1,14 +1,14 @@
-package object;
+package security;
 
 import java.util.Objects;
 
 public final class Certificate {
     private final String uid;
     private final String username;
-    private final SecretKey secretKey;
+    private final String secretKey;
     private boolean isAuthenticated;
 
-    public Certificate(String uuid, String username, SecretKey secretKey) {
+    public Certificate(String uuid, String username, String secretKey) {
         this.uid = uuid;
         this.username = username;
         this.secretKey = secretKey;
@@ -23,7 +23,7 @@ public final class Certificate {
         return username;
     }
 
-    public SecretKey getSecretKey() {
+    public String getSecretKey() {
         return secretKey;
     }
 

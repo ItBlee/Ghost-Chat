@@ -2,7 +2,8 @@ package constant;
 
 import com.sun.jdi.connect.spi.ClosedConnectionException;
 import core.Launcher;
-import object.*;
+import security.Certificate;
+import tranfer.*;
 import utils.ObjectUtil;
 import utils.StringUtil;
 import worker.Impl.SecureWorker;
@@ -12,10 +13,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class ClientMethods {
-    public static final Map<Header, Executable> methods;
+    public static final Map<String, Executable> methods;
 
     static {
-        methods = Collections.synchronizedMap(new HashMap<Header, Executable>());
+        methods = Collections.synchronizedMap(new HashMap<String, Executable>());
 
         methods.put(Header.BREAK_CONNECT, new Executable() {
             @Override
@@ -28,10 +29,10 @@ public final class ClientMethods {
             @Override
             public void run(Object... data) throws Exception {
                 SecureWorker worker = ObjectUtil.getFirstFromArray(data, SecureWorker.class);
-                Packet packet = ObjectUtil.getFirstFromArray(data, Packet.class);
-                if (packet.getData().get(DataKey.STATUS_CODE).equals(StatusCode.OK)) {
-                    String uid = packet.getData().get(DataKey.UID);
-                    String username = packet.getData().get(DataKey.USERNAME);
+                Packet response = ObjectUtil.getFirstFromArray(data, Packet.class);
+                if (response.getData(DataKey.STATUS_CODE).equals(StatusCode.OK)) {
+                    String uid = response.getData(DataKey.UID);
+                    String username = response.getData(DataKey.USERNAME);
                     if (StringUtil.isNullOrEmpty(uid) || StringUtil.isNullOrEmpty(username))
                         throw new Exception("Authenticate Failed !");
                     Certificate certificate = new Certificate(uid, username, worker.getSecretKey());
@@ -39,12 +40,28 @@ public final class ClientMethods {
                     Launcher.getInstance().setCertificate(certificate);
                     worker.close();
                 }
-
-                if (packet.getData().get(DataKey.STATUS_CODE).equals(StatusCode.UNAUTHENTICATED))
+                else if (response.getData(DataKey.STATUS_CODE).equals(StatusCode.UNAUTHENTICATED))
                     throw new Exception("Authenticate Failed !");
+            }
+        });
 
-                if (packet.getData().get(DataKey.STATUS_CODE).equals(StatusCode.BAD_REQUEST))
-                    throw new Exception("Bad Request !");
+        methods.put(Header.AUTH_REGISTER, new Executable() {
+            @Override
+            public void run(Object... data) throws Exception {
+                SecureWorker worker = ObjectUtil.getFirstFromArray(data, SecureWorker.class);
+                Packet response = ObjectUtil.getFirstFromArray(data, Packet.class);
+                if (response.getData(DataKey.STATUS_CODE).equals(StatusCode.CREATED)) {
+                    String uid = response.getData(DataKey.UID);
+                    String username = response.getData(DataKey.USERNAME);
+                    if (StringUtil.isNullOrEmpty(uid) || StringUtil.isNullOrEmpty(username))
+                        throw new Exception("Authenticate Failed !");
+                    Certificate certificate = new Certificate(uid, username, worker.getSecretKey());
+                    certificate.setAuthenticated(true);
+                    Launcher.getInstance().setCertificate(certificate);
+                    worker.close();
+                }
+                else if (response.getData(DataKey.STATUS_CODE).equals(StatusCode.INTERNAL_SERVER_ERROR))
+                    throw new Exception("Authenticate Failed !");
             }
         });
     }

@@ -1,12 +1,12 @@
 package GUI.panel;
 
-import object.Packet;
+import tranfer.Packet;
 import GUI.ClientGUI;
 import GUI.component.Dialog;
 import GUI.component.RoundJTextField;
 import GUI.component.RoundPanel;
 import GUI.handler.AlertHandler;
-import object.Header;
+import tranfer.Header;
 import core.Launcher;
 
 import javax.swing.*;

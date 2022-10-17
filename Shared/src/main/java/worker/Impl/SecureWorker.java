@@ -1,7 +1,6 @@
 package worker.Impl;
 
-import object.SecretKey;
-import utils.SecurityUtil;
+import security.SecurityUtil;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
@@ -9,13 +8,13 @@ import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 
 public abstract class SecureWorker extends AbstractWorker {
-    protected final SecretKey secretKey;
+    protected final String secretKey;
 
     public SecureWorker(Socket socket) throws IOException, NoSuchAlgorithmException {
        this(socket, SecurityUtil.generateKey());
     }
 
-    public SecureWorker(Socket socket, SecretKey secretKey) throws IOException {
+    public SecureWorker(Socket socket, String secretKey) throws IOException {
         super(socket);
         this.secretKey = secretKey;
     }
@@ -35,7 +34,7 @@ public abstract class SecureWorker extends AbstractWorker {
         return receiveMsg;
     }
 
-    public SecretKey getSecretKey() {
+    public String getSecretKey() {
         return secretKey;
     }
 }

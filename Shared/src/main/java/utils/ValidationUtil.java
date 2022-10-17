@@ -1,15 +1,15 @@
 package utils;
 
-import object.Certificate;
+import security.Certificate;
 
-public class ValidationUtils {
+public class ValidationUtil {
 
     public static boolean isValidCertificate(Certificate certificate) {
         if (certificate == null)
             return false;
         if (!certificate.isAuthenticated())
             return false;
-        if (StringUtil.isNullOrEmpty(certificate.getSecretKey().getKey()))
+        if (StringUtil.isNullOrEmpty(certificate.getSecretKey()))
             return false;
         if (certificate.getUid() == null || StringUtil.isNullOrEmpty(certificate.getUsername()))
             return false;

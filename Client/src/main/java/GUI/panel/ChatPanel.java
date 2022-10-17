@@ -3,7 +3,7 @@ package GUI.panel;
 import GUI.ClientGUI;
 import GUI.component.Dialog;
 import GUI.component.RoundJTextField;
-import object.Header;
+import tranfer.Header;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

@@ -1,4 +1,4 @@
-package utils;
+package helper;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -11,38 +11,26 @@ import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 
-public class MongoUtil {
-    private final String host;
-    private final Integer port;
-    private final String dbName;
-    private final String username;
-    private final String password;
+import static constant.ServerConstant.*;
+
+public class MongoHelper {
+    private static MongoHelper MONGO_HELPER;
 
     private static MongoClient client;
     private static MongoDatabase database;
 
-    public MongoUtil(String dbName) {
-        this(null, null, dbName, null, null);
-    }
-
-    public MongoUtil(String host, Integer port, String dbName) {
-        this(host, port, dbName, null, null);
-    }
-
-    public MongoUtil(String host, Integer port, String dbName, String username, String password) {
-        this.host = host;
-        this.port = port;
-        this.dbName = dbName;
-        this.username = username;
-        this.password = password;
+    public static synchronized MongoHelper getInstance() {
+        if (MONGO_HELPER == null)
+            MONGO_HELPER = new MongoHelper();
+        return MONGO_HELPER;
     }
 
     private MongoClientSettings clientSettings() {
         String uri = System.getProperty("mongodb.uri");
-        if (host != null && port != null)
-            uri = "mongodb://" + host + ":" + port;
-        if (username != null && password != null)
-            uri = "mongodb://" + username + ":" + password + "@" + host + ":" + port;
+        if (DB_HOST != null && DB_PORT != null)
+            uri = "mongodb://" + DB_HOST + ":" + DB_PORT;
+        if (DB_USERNAME != null && DB_PASSWORD != null)
+            uri = "mongodb://" + DB_USERNAME + ":" + DB_PASSWORD + "@" + DB_HOST + ":" + DB_PORT;
         ConnectionString connectionString = new ConnectionString(uri);
         CodecRegistry pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build());
         CodecRegistry codecRegistry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
@@ -60,7 +48,7 @@ public class MongoUtil {
 
     public MongoDatabase getDatabase() {
         if (database == null)
-            database = getClient().getDatabase(dbName);
+            database = getClient().getDatabase(DB_NAME);
         return database;
     }
 

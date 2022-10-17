@@ -1,7 +1,7 @@
 package GUI.component;
 
-import object.Packet;
-import object.DataKey;
+import tranfer.Packet;
+import tranfer.DataKey;
 import core.Launcher;
 import utils.JsonParser;
 

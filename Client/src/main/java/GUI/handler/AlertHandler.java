@@ -1,9 +1,9 @@
 package GUI.handler;
 
-import object.Packet;
+import tranfer.Packet;
 import GUI.ClientGUI;
 import GUI.component.Dialog;
-import object.Header;
+import tranfer.Header;
 import core.Launcher;
 import utils.StringUtil;
 

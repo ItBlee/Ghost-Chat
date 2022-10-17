@@ -1,6 +1,4 @@
-package utils;
-
-import object.SecretKey;
+package security;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -15,12 +13,12 @@ import java.util.UUID;
 
 public class SecurityUtil {
     public static final String ALGORITHM = "AES";
-    public static final int KEY_BIT_LENGTH = 16; //secretKey phải 16 bit
 
     /**
      * Tạo secretKey
      */
-    public static SecretKey generateKey() throws NoSuchAlgorithmException {
+    public static String generateKey() throws NoSuchAlgorithmException {
+        int KEY_BIT_LENGTH = 16;
         String secretKey;
         do {
             String keyID = UUID.randomUUID().toString();
@@ -28,7 +26,7 @@ public class SecurityUtil {
             salt.update(keyID.getBytes(StandardCharsets.UTF_8));
             secretKey = Long.toHexString(ByteBuffer.wrap(salt.digest()).getLong());
         } while (secretKey.length() != KEY_BIT_LENGTH);
-        return new SecretKey(secretKey);
+        return secretKey;
     }
 
     /**
@@ -70,8 +68,8 @@ public class SecurityUtil {
      * @param secretKey khóa bí mật
      * @return chuỗi đã bị mã hóa
      */
-    public static String encrypt(String plaintext, SecretKey secretKey) throws Exception {
-        SecretKeySpec skeySpec = new SecretKeySpec(secretKey.getKey().getBytes(), ALGORITHM);
+    public static String encrypt(String plaintext, String secretKey) throws Exception {
+        SecretKeySpec skeySpec = new SecretKeySpec(secretKey.getBytes(), ALGORITHM);
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
         cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
         byte[] byteEncrypted = cipher.doFinal(plaintext.getBytes());
@@ -85,9 +83,9 @@ public class SecurityUtil {
      * @param secretKey khóa bí mật
      * @return chuỗi giải mã
      */
-    public static String decrypt(String ciphertext, SecretKey secretKey) throws Exception {
+    public static String decrypt(String ciphertext, String secretKey) throws Exception {
         byte[] byteEncrypted = Base64.getDecoder().decode(ciphertext);
-        SecretKeySpec skeySpec = new SecretKeySpec(secretKey.getKey().getBytes(), ALGORITHM);
+        SecretKeySpec skeySpec = new SecretKeySpec(secretKey.getBytes(), ALGORITHM);
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
         cipher.init(Cipher.DECRYPT_MODE, skeySpec);
         byte[] byteDecrypted = cipher.doFinal(byteEncrypted);

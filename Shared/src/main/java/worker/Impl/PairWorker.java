@@ -1,7 +1,5 @@
 package worker.Impl;
 
-import object.SecretKey;
-
 import java.io.IOException;
 import java.net.Socket;
 
@@ -9,23 +7,17 @@ public abstract class PairWorker<T> extends SecureWorker {
     protected T pair;
     protected boolean isPaired = false;
 
-    public PairWorker(Socket socket, SecretKey secretKey) throws IOException {
+    public PairWorker(Socket socket, String secretKey) throws IOException {
         super(socket, secretKey);
     }
 
     public void breakPair() {
         setPair(null);
-        unlockPair();
+        lockPair(false);
     }
 
-    public void lockPair() {
-        if (!isPaired)
-            isPaired = true;
-    }
-
-    public void unlockPair() {
-        if (isPaired)
-            isPaired = false;
+    public void lockPair(boolean b) {
+        isPaired = b;
     }
 
     public boolean isPaired() {
@@ -38,6 +30,6 @@ public abstract class PairWorker<T> extends SecureWorker {
 
     public void setPair(T pair) {
         this.pair = pair;
-        lockPair();
+        lockPair(true);
     }
 }
