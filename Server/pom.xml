@@ -6,24 +6,24 @@
 
     <parent>
         <artifactId>ChatAPP</artifactId>
-        <groupId>com.tvprojects</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <groupId>com.itblee</groupId>
+        <version>1.0</version>
     </parent>
 
     <artifactId>Server</artifactId>
 
     <properties>
-        <maven.compiler.source>14</maven.compiler.source>
-        <maven.compiler.target>14</maven.compiler.target>
-        <shared.version>1.0-SNAPSHOT</shared.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <shared.version>1.0</shared.version>
         <mongodb.version>4.7.1</mongodb.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.tvprojects</groupId>
+            <groupId>com.itblee</groupId>
             <artifactId>Shared</artifactId>
-            <version>${shared.version}</version>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>

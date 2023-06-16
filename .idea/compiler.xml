@@ -12,10 +12,10 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="ChatAPP" target="14" />
-      <module name="Client" target="14" />
-      <module name="Server" target="14" />
-      <module name="Shared" target="14" />
+      <module name="ChatAPP" target="1.8" />
+      <module name="Client" target="1.8" />
+      <module name="Server" target="1.8" />
+      <module name="Shared" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
