@@ -1,14 +1,16 @@
 package com.itblee.gui.page;
 
-import com.itblee.gui.component.TransitionPane;
+import com.itblee.gui.ClientFrame;
+import com.itblee.gui.component.AbstractPane;
 
 import javax.swing.*;
 
 import static com.itblee.constant.Resource.BG_LOADING;
 
-public class LoadingPage extends TransitionPane {
+public class LoadingPage extends AbstractPane {
 
-    public LoadingPage() {
+    public LoadingPage(ClientFrame owner) {
+        super(owner);
         initComponents();
     }
 
@@ -18,7 +20,7 @@ public class LoadingPage extends TransitionPane {
 
         JLabel bg = new JLabel();
         bg.setIcon(BG_LOADING);
-        add(bg, JLayeredPane.DEFAULT_LAYER);
+        add(bg);
         bg.setBounds(0, -38, 365, 735);
     }
 
@@ -28,6 +30,11 @@ public class LoadingPage extends TransitionPane {
 
     @Override
     public void doOutro() {
+    }
+
+    @Override
+    public void reset() {
+
     }
 
 }

@@ -19,7 +19,7 @@ public class Dialog extends JDialog {
 		private Choice choice;
 		private String message = "ALERT";
 		private boolean isAlert = false;
-		private final AnimatedImage icon = new AnimatedImage(IMAGE_DIALOG_INVITE);
+		private AnimatedImage icon = new AnimatedImage(IMAGE_DIALOG_INVITE);
 		private Color fontColor = COLOR_DARK_BLUE;
 		private String acceptTitle = "OK";
 		private String declineTitle = "CANCEL";
@@ -88,7 +88,6 @@ public class Dialog extends JDialog {
 	private void initComponents() {
 		JLabel bg = new JLabel();
 		JPanel mainPanel = new JPanel();
-		AnimatedImage lbIcon = icon;
 		JLabel lbContent = new JLabel();
 		JPanel buttonBar = new JPanel();
 		okButton = new JButton();
@@ -98,10 +97,10 @@ public class Dialog extends JDialog {
 		setResizable(false);
 		setUndecorated(true);
 		getRootPane().setOpaque(false);
-		getContentPane().setBackground(new Color(0, 0, 0, 0));
-		setBackground(new Color(0, 0, 0, 0));
+		setBackground(TRANSPARENT);
 		Container contentPane = getContentPane();
 		contentPane.setLayout(new BorderLayout());
+		contentPane.setBackground(TRANSPARENT);
 
 		//======== buttonBar ========
 		{
@@ -143,9 +142,8 @@ public class Dialog extends JDialog {
 
 		contentPane.add(Box.createRigidArea(new Dimension(10,30)));
 
-		contentPane.add(lbIcon);
-		lbIcon.startAnimation();
-		lbIcon.setBounds(0, -23, 350, 200);
+		contentPane.add(icon);
+		icon.setBounds(0, -23, 350, 200);
 
 		{
 			mainPanel.setOpaque(false);
@@ -168,16 +166,22 @@ public class Dialog extends JDialog {
 		setLocation(getX() + 2,getY() + 180);
 	}
 
+	@Override
+	public void setVisible(boolean b) {
+		super.setVisible(b);
+		owner.setEnabled(!b);
+		owner.getRootPane().getGlassPane().setVisible(b);
+	}
+
 	public void display() {
 		startTimer();
 		setVisible(true);
-		owner.setEnabled(false);
-		owner.getRootPane().getGlassPane().setVisible(true);
+		icon.startAnimation();
 	}
 
 	private void exit() {
-		owner.setEnabled(true);
-		owner.getRootPane().getGlassPane().setVisible(false);
+		owner.setVisible(false);
+		icon.stopAnimation();
 		dispose();
 		timer.interrupt();
 	}

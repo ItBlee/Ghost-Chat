@@ -4,13 +4,17 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Base64;
 
 public final class IconUtil {
+
+    static final String[] EXTENSIONS = new String[] {
+            "png", "gif", "jpeg", "jpg", "bmp"
+    };
 
     public static String encode(ImageIcon imageIcon) {
         return Base64.getEncoder().encodeToString(imageToByteArray(imageIcon));
@@ -27,8 +31,7 @@ public final class IconUtil {
             BufferedImage image = new BufferedImage(imageIcon.getIconWidth(), imageIcon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
             ByteArrayOutputStream b = new ByteArrayOutputStream();
 
-            Graphics g;
-            g = image.createGraphics();
+            Graphics g = image.createGraphics();
             imageIcon.paintIcon(null, g, 0,0);
             ImageIO.write(image, "png", b );
             g.dispose();
@@ -52,15 +55,28 @@ public final class IconUtil {
             return null;
         }
     }
-    public static ImageIcon[] loadSequence(String dir, String indexFormat, String extension, int size) {
-        return loadSequence(dir, indexFormat, extension, size, 0);
+
+    private static FilenameFilter getFilter(String[] extensions) {
+        return (dir, name) -> Arrays.stream(extensions).anyMatch(ext -> name.endsWith("." + ext));
     }
 
-    public static ImageIcon[] loadSequence(String dir, String indexFormat, String extension, int size, int startIndex) {
-        ImageIcon[] images = new ImageIcon[size];
+    public static ImageIcon[] loadSequence(String dir) {
+        return loadSequence(dir, EXTENSIONS);
+    }
+
+    public static ImageIcon[] loadSequence(String dir, String[] extensions) {
+        File folder = new File(dir);
+        if (!folder.isDirectory())
+            throw new IllegalArgumentException("require folder path");
+        if (extensions == null)
+            extensions = EXTENSIONS;
+        File[] files = folder.listFiles(getFilter(extensions));
+        if (files == null || files.length == 0)
+            throw new IllegalArgumentException("Folder contain no image");
+
+        ImageIcon[] images = new ImageIcon[files.length];
         for (int i = 0; i < images.length; ++i) {
-            String formatted = String.format(indexFormat, i + startIndex);
-            images[i] = new ImageIcon(dir + formatted + extension);
+            images[i] = new ImageIcon(files[i].getPath());
         }
         return images;
     }

@@ -1,7 +1,8 @@
 package com.itblee.gui.page;
 
 import com.itblee.core.Client;
-import com.itblee.gui.component.TransitionPane;
+import com.itblee.gui.ClientFrame;
+import com.itblee.gui.component.AbstractPane;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,9 +10,10 @@ import java.io.IOException;
 
 import static com.itblee.constant.Resource.*;
 
-public class ErrorPage extends TransitionPane {
+public class ErrorPage extends AbstractPane {
 
-    public ErrorPage() {
+    public ErrorPage(ClientFrame owner) {
+        super(owner);
         initComponents();
     }
 
@@ -21,7 +23,7 @@ public class ErrorPage extends TransitionPane {
 
         icon = new JLabel();
         icon.setIcon(IMAGE_LOADING);
-        this.add(icon, JLayeredPane.DEFAULT_LAYER);
+        add(icon);
         icon.setBounds(65, 140, 226, 226);
         icon.setVisible(false);
 
@@ -35,13 +37,13 @@ public class ErrorPage extends TransitionPane {
         btnReconnect.setForeground(Color.WHITE);
         btnReconnect.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnReconnect.addActionListener(e -> reconnect());
-        this.add(btnReconnect, JLayeredPane.DEFAULT_LAYER);
+        add(btnReconnect);
         btnReconnect.setBounds(79, 555, 200, 40);
         btnReconnect.addActionListener(e -> reconnect());
 
         JLabel bg = new JLabel();
         bg.setIcon(BG_ERROR);
-        this.add(bg, JLayeredPane.DEFAULT_LAYER);
+        add(bg);
         bg.setBounds(0, -20, 365, 735);
     }
 
@@ -71,6 +73,11 @@ public class ErrorPage extends TransitionPane {
 
     @Override
     public void doOutro() {
+
+    }
+
+    @Override
+    public void reset() {
 
     }
 }

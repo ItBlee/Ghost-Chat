@@ -2,45 +2,50 @@ package com.itblee.gui.component;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 
 public class AnimatedImage extends JComponent {
 
     private ImageIcon[] images;
 
+    private Timer timer;
+
     private final int totalImages;
     private int currentImage;
     private int loop;
     private int loopCount;
-    private final int animationDelay;
-    private boolean isRunning;
-
-    private Timer animationTimer;
+    private final int delay;
 
     public AnimatedImage(ImageIcon[] images) {
         this(images, 33);
     }
 
-    public AnimatedImage(ImageIcon[] images, int animationDelay) {
+    public AnimatedImage(ImageIcon[] images, int delay) {
         this.images = images;
         this.totalImages = images.length;
-        this.currentImage = 0;
-        this.loop = 0;
-        this.loopCount = 0;
-        this.animationDelay = animationDelay;
-        isRunning = false;
+        currentImage = 0;
+        loop = 0;
+        loopCount = 0;
+        this.delay = delay;
     }
 
-    public AnimatedImage(ImageIcon[] images, int animationDelay, int loop) {
-        this(images, animationDelay);
+    public AnimatedImage(ImageIcon[] images, int delay, int loop) {
+        this(images, delay);
         this.loop = loop;
     }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+        if (timer == null || !timer.isRunning())
+            return;
         if (images[currentImage].getImageLoadStatus() == MediaTracker.COMPLETE) {
             images[currentImage].paintIcon(this, g, 0, 0);
             currentImage = (currentImage + 1) % totalImages;
         }
+    }
+
+    private void paintImage() {
+        repaint();
         if (currentImage == 0 && loop > 0) {
             loopCount++;
             if (loopCount == loop)
@@ -50,32 +55,26 @@ public class AnimatedImage extends JComponent {
 
     public void startAnimation() {
         currentImage = 0;
-        if (animationTimer == null) {
-            animationTimer = new Timer(animationDelay, e -> repaint());
-            animationTimer.start();
-        } else if (!animationTimer.isRunning())
-            animationTimer.restart();
-        isRunning = true;
+        if (timer == null) {
+            timer = new Timer(delay, e -> paintImage());
+            timer.start();
+        } else if (!timer.isRunning())
+            timer.restart();
     }
 
     public void stopAnimation() {
-        animationTimer.stop();
-        isRunning = false;
+        if (timer != null)
+            timer.stop();
     }
 
     public void waitFinish() {
         if (loop == 0)
             throw new IllegalThreadStateException();
-        while (isRunning()) {
+        while (timer != null && timer.isRunning()) {
             try {
-                System.out.println("w");
-                Thread.sleep(animationDelay);
+                Thread.sleep(timer.getDelay());
             } catch (InterruptedException ignored) {}
         }
-    }
-
-    public boolean isRunning() {
-        return isRunning;
     }
 
     public void setImages(ImageIcon[] images) {

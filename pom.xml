@@ -16,7 +16,7 @@
     </modules>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.images>1.8</maven.compiler.images>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 </project>

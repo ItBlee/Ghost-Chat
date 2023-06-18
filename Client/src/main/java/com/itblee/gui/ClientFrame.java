@@ -4,7 +4,7 @@ import com.itblee.constant.Resource;
 import com.itblee.core.ClientHelper;
 import com.itblee.core.TransferHelper;
 import com.itblee.gui.component.MoveJFrame;
-import com.itblee.gui.component.TransitionPane;
+import com.itblee.gui.component.AbstractPane;
 import com.itblee.gui.page.*;
 import com.itblee.model.FriendInfo;
 import com.itblee.model.Message;
@@ -23,7 +23,7 @@ import static com.itblee.constant.Resource.*;
 public class ClientFrame extends MoveJFrame {
 
 	private CardLayout card;
-	private Map<Page, TransitionPane> pages;
+	private Map<Page, AbstractPane> pages;
 
 	private Page current;
 
@@ -42,11 +42,11 @@ public class ClientFrame extends MoveJFrame {
 
 	private void initComponents() {
 		pages = new LinkedHashMap<>();
-		pages.put(Page.LOADING, new LoadingPage());
-		pages.put(Page.DISCONNECT, new ErrorPage());
-		pages.put(Page.LOGIN, new LoginPage());
-		pages.put(Page.HOME, new HomePage());
-		pages.put(Page.CHAT, new ChatPage());
+		pages.put(Page.LOADING, new LoadingPage(this));
+		pages.put(Page.DISCONNECT, new ErrorPage(this));
+		pages.put(Page.LOGIN, new LoginPage(this));
+		pages.put(Page.HOME, new HomePage(this));
+		pages.put(Page.CHAT, new ChatPage(this));
 
 		current = Page.LOADING;
 
@@ -60,7 +60,7 @@ public class ClientFrame extends MoveJFrame {
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setResizable(false);
 		setIconImage(Resource.IMAGE_ICON.getImage());
-		setSize(365, 735);
+		setSize(350, 735);
 		setLocationRelativeTo(getOwner());
 		JRootPane rootPane = getRootPane();
 		rootPane.putClientProperty("JRootPane.titleBarForeground", Color.WHITE);
@@ -148,7 +148,7 @@ public class ClientFrame extends MoveJFrame {
 	}
 
 	private void setPage(Page page) {
-		pages.get(current).doOutro();
+		AbstractPane oldPage = pages.get(current);
 		current = page;
 		Color titleBarColor;
 		switch (page) {
@@ -164,8 +164,10 @@ public class ClientFrame extends MoveJFrame {
 				titleBarColor = COLOR_SEMI_BLACK;
 		}
 		getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarColor);
+		oldPage.doOutro();
 		card.show(getContentPane(), current.name());
 		pages.get(current).doIntro();
+		oldPage.reset();
 	}
 
 	private JComponent getCurrent() {

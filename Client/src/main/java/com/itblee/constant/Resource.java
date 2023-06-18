@@ -9,6 +9,7 @@ import static com.itblee.constant.ClientConstant.RESOURCE_PATH;
 
 public interface Resource {
 
+    Color TRANSPARENT = new Color(0, 0, 0, 0);
     Color COLOR_GRAY_BLUE = new Color(109, 176, 208);
     Color COLOR_DEEP_LIGHT_BLUE = new Color(115,170,250);
     Color COLOR_LIGHT_BLUE = new Color(134, 238, 252);
@@ -55,17 +56,18 @@ public interface Resource {
     ImageIcon IMAGE_SEND_FAIL = new ImageIcon(RESOURCE_PATH + "images/sendFail.png");
     ImageIcon IMAGE_VIEW = new ImageIcon(RESOURCE_PATH + "images/view.png");
     ImageIcon IMAGE_HIDDEN = new ImageIcon(RESOURCE_PATH + "images/hidden.png");
-    ImageIcon[] IMAGE_DIALOG_INVITE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/invite/invite_", "%05d", ".png", 60);
-    ImageIcon[] IMAGE_DIALOG_CONFIRM = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/confirm/confirm_", "%05d", ".png", 60);
-    ImageIcon[] IMAGE_DIALOG_DECLINE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/decline/decline_", "%05d", ".png", 60);
 
-    ImageIcon[] BG_HOME = IconUtil.loadSequence(RESOURCE_PATH + "images/home/bg/Comp 1_", "%05d", ".png", 1);
-    ImageIcon[] BG_HOME_INTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/home/home_intro/home_intro_", "%05d", ".png", 17);
+    ImageIcon[] IMAGE_DIALOG_INVITE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/invite");
+    ImageIcon[] IMAGE_DIALOG_CONFIRM = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/confirm");
+    ImageIcon[] IMAGE_DIALOG_DECLINE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/decline");
+
+    ImageIcon[] BG_HOME = IconUtil.loadSequence(RESOURCE_PATH + "images/home/bg");
+    ImageIcon[] BG_HOME_INTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/home/home_intro");
     ImageIcon BG_ERROR = new ImageIcon(RESOURCE_PATH + "images/disconnect.png");
     ImageIcon BG_LOADING = new ImageIcon(RESOURCE_PATH + "images/loading/loading.gif");
-    ImageIcon[] BG_LOADING_INTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/loading/intro/intro_", "%05d", ".png", 53);
-    ImageIcon[] BG_LOADING_OUTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/loading/outro/outro_", "%05d", ".png", 52);
+    ImageIcon[] BG_LOADING_INTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/loading/intro");
+    ImageIcon[] BG_LOADING_OUTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/loading/outro");
     ImageIcon BG_LOGIN = new ImageIcon(RESOURCE_PATH + "images/login/login.png");
-    ImageIcon[] BG_LOGIN_SUCCESS = IconUtil.loadSequence(RESOURCE_PATH + "images/login/success/login-success_", "%05d", ".png", 30);
+    ImageIcon[] BG_LOGIN_SUCCESS = IconUtil.loadSequence(RESOURCE_PATH + "images/login/success");
     ImageIcon BG_DIALOG = new ImageIcon(RESOURCE_PATH + "images/dialog/dialog.png");
 }

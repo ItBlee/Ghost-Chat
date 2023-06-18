@@ -6,7 +6,7 @@ import com.itblee.core.Worker;
 import com.itblee.gui.Alert;
 import com.itblee.gui.ClientFrame;
 import com.itblee.gui.component.AnimatedImage;
-import com.itblee.gui.component.TransitionPane;
+import com.itblee.gui.component.AbstractPane;
 import com.itblee.model.FriendInfo;
 import com.itblee.transfer.DataKey;
 import com.itblee.transfer.Packet;
@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import static com.itblee.constant.Resource.*;
 
-public class HomePage extends TransitionPane {
+public class HomePage extends AbstractPane {
 
     private State state;
 
@@ -33,7 +33,8 @@ public class HomePage extends TransitionPane {
         DISCONNECT
     }
 
-    public HomePage() {
+    public HomePage(ClientFrame owner) {
+        super(owner);
         initComponents();
         state = State.NORMAL;
     }
@@ -54,14 +55,15 @@ public class HomePage extends TransitionPane {
         requestFocus();
 
         cover = new AnimatedImage(BG_HOME_INTRO, 45, 1);
-        this.add(cover, JLayeredPane.DEFAULT_LAYER);
-        cover.setBounds(0, 0, 365, 735);
+        cover.setFocusable(false);
         cover.setVisible(false);
+        add(cover);
+        cover.setBounds(0, 0, 365, 735);
 
         //---- lbAPPIcon ----
         lbAPPIcon.setBackground(Color.WHITE);
         lbAPPIcon.setIcon(IMAGE_ICON);
-        //this.add(lbAPPIcon, JLayeredPane.DEFAULT_LAYER);
+        //add(lbAPPIcon, JLayeredPane.DEFAULT_LAYER);
         lbAPPIcon.setBounds(105, 70, 134, 139);
 
         //======== inputNamePanel ========
@@ -150,35 +152,38 @@ public class HomePage extends TransitionPane {
             //inputPanel.add(btnQuit);
             btnQuit.setBounds(24, 215, 292, 39);
         }
-        this.add(inputPanel, JLayeredPane.DEFAULT_LAYER);
+        add(inputPanel);
         inputPanel.setBounds(0, 400, 335, 320);
 
         //---- lbAPPName ----
         lbAPPName.setBackground(Color.WHITE);
         lbAPPName.setIcon(IMAGE_TITLE);
-        //this.add(lbAPPName, JLayeredPane.DEFAULT_LAYER);
+        //add(lbAPPName, JLayeredPane.DEFAULT_LAYER);
         //lbAPPName.setBounds(44, 180, 255, 148);
         lbAPPName.setBounds(0, 0, 365, 735);
 
         bg = new AnimatedImage(BG_HOME);
-        this.add(bg, JLayeredPane.DEFAULT_LAYER);
+        add(bg);
         bg.setBounds(0, 0, 365, 735);
-        bg.startAnimation();
     }
 
     @Override
     public void doIntro() {
-        bg.stopAnimation();
         cover.setVisible(true);
         cover.startAnimation();
         cover.waitFinish();
         bg.startAnimation();
-        cover.setVisible(false);
     }
 
     @Override
     public void doOutro() {
 
+    }
+
+    @Override
+    public void reset() {
+        bg.stopAnimation();
+        cover.setVisible(false);
     }
 
     private void joinChat() {

@@ -1,6 +1,6 @@
 package com.itblee.gui.page;
 
-import com.itblee.gui.component.TransitionPane;
+import com.itblee.gui.component.AbstractPane;
 import com.itblee.model.FriendInfo;
 import com.itblee.model.Message;
 import com.itblee.gui.Alert;
@@ -28,7 +28,7 @@ import static com.itblee.constant.ClientConstant.CHAT_AUTO_LEFT_TIME;
 import static com.itblee.constant.ClientConstant.LIMIT_INPUT_LINE;
 import static com.itblee.constant.Resource.*;
 
-public class ChatPage extends TransitionPane {
+public class ChatPage extends AbstractPane {
 
     private FriendInfo info;
     private Thread leaveTimer;
@@ -36,7 +36,8 @@ public class ChatPage extends TransitionPane {
     private int scrollBarMaxValue;
     private int messageCount;
 
-    public ChatPage() {
+    public ChatPage(ClientFrame owner) {
+        super(owner);
         initComponents();
         messageCount = 0;
     }
@@ -110,7 +111,7 @@ public class ChatPage extends TransitionPane {
             chatHeaderPanel.add(btnInfo);
             btnInfo.setBounds(302, 21, 28, 29);
         }
-        this.add(chatHeaderPanel, JLayeredPane.DEFAULT_LAYER);
+        add(chatHeaderPanel);
         chatHeaderPanel.setBounds(0, 0, 365, 75);
 
         //---- btnSend ----
@@ -121,7 +122,7 @@ public class ChatPage extends TransitionPane {
         btnSend.setFocusPainted(false);
 
         btnSend.addActionListener(e -> sendMessage());
-        this.add(btnSend, JLayeredPane.DEFAULT_LAYER);
+        add(btnSend);
         btnSend.setBounds(300, 640, 40, 40);
 
         //---- txtInput ----
@@ -130,7 +131,7 @@ public class ChatPage extends TransitionPane {
         txtInput.setFont(FONT_ARIA_PLAIN_14);
         txtInput.setForeground(Color.LIGHT_GRAY);
         txtInput.setText("Type message here...");
-        this.add(txtInput, JLayeredPane.DEFAULT_LAYER);
+        add(txtInput);
         txtInput.setBounds(20, 640, 275, 40);
         txtInput.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {
@@ -203,7 +204,7 @@ public class ChatPage extends TransitionPane {
             });
             txtAreaScrollPane.setViewportView(inputArea);
         }
-        this.add(txtAreaScrollPane, JLayeredPane.DEFAULT_LAYER);
+        add(txtAreaScrollPane);
         txtAreaScrollPane.setBounds(20, 640, 275, 40);
         txtAreaScrollPane.setVisible(false);
 
@@ -233,7 +234,7 @@ public class ChatPage extends TransitionPane {
                 scrollBarMaxValue = chatScrollPane.getVerticalScrollBar().getMaximum();
             });
         }
-        this.add(chatScrollPane, JLayeredPane.DEFAULT_LAYER);
+        add(chatScrollPane);
         chatScrollPane.setBounds(-2, 72, 365, 550);
     }
 
