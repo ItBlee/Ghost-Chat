@@ -36,7 +36,7 @@ public class Client {
         this.frame = frame;
     }
 
-    public static synchronized Client newInstance(ClientFrame frame) {
+    public static synchronized Client init(ClientFrame frame) {
         ObjectUtil.requireNonNull(frame);
         if (!frame.isEnabled())
             throw new IllegalArgumentException();

@@ -97,6 +97,10 @@ public class ClientFrame extends MoveJFrame {
 		setPage(Page.HOME);
 	}
 
+	public void showChat() {
+		setPage(Page.CHAT);
+	}
+
 	public void appendReceive(Message message) {
 		if (current != Page.CHAT)
 			return;
@@ -148,8 +152,9 @@ public class ClientFrame extends MoveJFrame {
 	}
 
 	private void setPage(Page page) {
-		AbstractPane oldPage = pages.get(current);
+		Page old = current;
 		current = page;
+		AbstractPane oldPage = pages.get(old);
 		Color titleBarColor;
 		switch (page) {
 			case CHAT:
@@ -163,10 +168,12 @@ public class ClientFrame extends MoveJFrame {
 			default:
 				titleBarColor = COLOR_SEMI_BLACK;
 		}
-		getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarColor);
 		oldPage.doOutro();
 		card.show(getContentPane(), current.name());
-		pages.get(current).doIntro();
+		AbstractPane newPage = pages.get(current);
+		newPage.from(old);
+		newPage.doIntro();
+		getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarColor);
 		oldPage.reset();
 	}
 

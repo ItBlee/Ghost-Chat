@@ -13,7 +13,7 @@
     <artifactId>Server</artifactId>
 
     <properties>
-        <maven.compiler.images>1.8</maven.compiler.images>
+        <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <shared.version>1.0</shared.version>
         <mongodb.version>4.7.1</mongodb.version>

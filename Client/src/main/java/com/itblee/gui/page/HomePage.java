@@ -11,14 +11,9 @@ import com.itblee.model.FriendInfo;
 import com.itblee.transfer.DataKey;
 import com.itblee.transfer.Packet;
 import com.itblee.transfer.StatusCode;
-import com.itblee.utils.StringUtil;
-import com.itblee.utils.ValidateUtil;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.io.IOException;
 
 import static com.itblee.constant.Resource.*;
@@ -40,12 +35,7 @@ public class HomePage extends AbstractPane {
     }
 
     private void initComponents() {
-        lbAPPIcon = new JLabel();
-        JLabel lbAPPName = new JLabel();
         JPanel inputPanel = new JPanel();
-        lbWelcome = new JLabel();
-        lbTitles = new JLabel();
-        txtName = new JTextField();
         btnJoin = new JButton("JOIN");
         btnQuit = new JButton("QUIT");
 
@@ -54,64 +44,11 @@ public class HomePage extends AbstractPane {
         setFocusable(true);
         requestFocus();
 
-        cover = new AnimatedImage(BG_HOME_INTRO, 45, 1);
-        cover.setFocusable(false);
-        cover.setVisible(false);
-        add(cover);
-        cover.setBounds(0, 0, 365, 735);
-
-        //---- lbAPPIcon ----
-        lbAPPIcon.setBackground(Color.WHITE);
-        lbAPPIcon.setIcon(IMAGE_ICON);
-        //add(lbAPPIcon, JLayeredPane.DEFAULT_LAYER);
-        lbAPPIcon.setBounds(105, 70, 134, 139);
-
         //======== inputNamePanel ========
         {
             inputPanel.setBackground(COLOR_LIGHT_BLUE);
             inputPanel.setOpaque(false);
             inputPanel.setLayout(null);
-
-            //---- lbWelcome ----
-            lbWelcome.setText("   Let's Chat Together");
-            lbWelcome.setFont(FONT_SEGOE_BOLD_27);
-            lbWelcome.setForeground(Color.WHITE);
-            //inputPanel.add(lbWelcome);
-            lbWelcome.setBounds(new Rectangle(new Point(25, 40), lbWelcome.getPreferredSize()));
-
-            //---- lbTitles ----
-            lbTitles.setText("");
-            lbTitles.setFont(FONT_ARIA_PLAIN_14);
-            lbTitles.setForeground(Color.WHITE);
-            lbTitles.setLabelFor(txtName);
-            inputPanel.add(lbTitles);
-            lbTitles.setBounds(25, 86, 295, 25);
-
-            //---- txtName ----
-            txtName.setBorder(new EmptyBorder(5,15,5,5));
-            txtName.setBackground(COLOR_DARK_DEEP_BLUE);
-            txtName.setForeground(Color.white);
-            txtName.setHorizontalAlignment(SwingConstants.CENTER);
-            txtName.setText("WHAT'S YOUR NAME ?");
-
-            txtName.addFocusListener(new FocusListener() {
-                @Override
-                public void focusGained(FocusEvent e) {
-                    if (txtName.getText().equalsIgnoreCase("WHAT'S YOUR NAME ?")){
-                        txtName.setText("");
-                    }
-                }
-
-                @Override
-                public void focusLost(FocusEvent e) {
-                    if(StringUtil.isBlank(txtName.getText())){
-                        txtName.setText("WHAT'S YOUR NAME ?");
-                    }
-                }
-            });
-            //inputPanel.add(txtName);
-            //txtName.setBounds(25, 110, 290, 40);
-            txtName.setBounds(30, 175, 290, 40);
 
             //---- btnJoin ----
             btnJoin.setText("JOIN");
@@ -122,80 +59,73 @@ public class HomePage extends AbstractPane {
             btnJoin.setFont(FONT_COOPER_BLACK_PLAIN_14);
             btnJoin.setForeground(Color.WHITE);
             btnJoin.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            btnJoin.addActionListener(e -> {
-                if (state == State.NORMAL) {
-                    joinChat();
-                }
-            });
+            btnJoin.addActionListener(
+                    requireNotLock(e ->
+                            quit(() -> getOwner().showChat())
+                    ));
             inputPanel.add(btnJoin);
-            //btnJoin.setBounds(24, 170, 292, 39);
-            btnJoin.setBounds(30, 225, 292, 39);
+            btnJoin.setBounds(30, 205, 292, 40);
 
             //---- btnQuit ----
-            btnQuit.setText("QUIT");
+            btnQuit.setText("LOGOUT");
+            btnQuit.setContentAreaFilled(false);
             btnQuit.setBorderPainted(false);
             btnQuit.setOpaque(false);
             btnQuit.setFocusPainted(false);
-            btnQuit.setBackground(COLOR_LIGHT_RED);
-            btnQuit.setFont(FONT_SEGOE_SEMI_PLAIN_14);
-            btnQuit.setForeground(Color.WHITE);
+            btnQuit.setFont(FONT_COOPER_BLACK_PLAIN_14);
+            btnQuit.setForeground(COLOR_ORANGE);
             btnQuit.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            btnQuit.addActionListener(e -> {
-                switch (state) {
-                    case NORMAL:
-                    case DISCONNECT:
-                        quit();
-                        break;
-                    case LOADING: cancel();
-                }
-            });
-            //inputPanel.add(btnQuit);
-            btnQuit.setBounds(24, 215, 292, 39);
+            btnQuit.addActionListener(
+                    requireNotLock(e ->
+                            quit(() -> getOwner().showLogin())
+                    ));
+            inputPanel.add(btnQuit);
+            btnQuit.setBounds(30, 245, 292, 40);
         }
         add(inputPanel);
         inputPanel.setBounds(0, 400, 335, 320);
 
-        //---- lbAPPName ----
-        lbAPPName.setBackground(Color.WHITE);
-        lbAPPName.setIcon(IMAGE_TITLE);
-        //add(lbAPPName, JLayeredPane.DEFAULT_LAYER);
-        //lbAPPName.setBounds(44, 180, 255, 148);
-        lbAPPName.setBounds(0, 0, 365, 735);
-
         bg = new AnimatedImage(BG_HOME);
+        bg.freezeLastFrame(true);
         add(bg);
-        bg.setBounds(0, 0, 365, 735);
+        bg.setBounds(0, 0, 350, 735);
     }
 
     @Override
     public void doIntro() {
-        cover.setVisible(true);
-        cover.startAnimation();
-        cover.waitFinish();
+        AnimatedImage cover = getCover();
+        if (getOldPage() == ClientFrame.Page.LOGIN)
+            cover.setImages(COVER_LOGIN_SUCCESS_OUT);
+        else cover.setImages(COVER_LOADING_OUTRO);
+        cover.freezeLastFrame(false);
+        super.doIntro();
         bg.startAnimation();
     }
 
-    @Override
-    public void doOutro() {
-
+    private void quit(Runnable runnable) {
+        AnimatedImage cover = getCover();
+        cover.setImages(COVER_LOADING_INTRO);
+        cover.freezeLastFrame(true);
+        bg.stopAnimation();
+        doOutro(runnable);
     }
 
     @Override
     public void reset() {
         bg.stopAnimation();
-        cover.setVisible(false);
+        super.reset();
     }
 
     private void joinChat() {
-        String username = txtName.getText();
+        /*String username = txtName.getText();
         if (ValidateUtil.isValidUserName(username)
             || username.equalsIgnoreCase("WHAT'S YOUR NAME ?")) {
             Alert.showError("Invalid Name");
             lbTitles.setText("Must less than 10 characters !");
             return;
-        }
+        }*/
         disableComponents();
-        new Thread(() -> load(username)).start();
+        //new Thread(() -> load(username)).start();
     }
 
     private void load(String username) {
@@ -212,8 +142,8 @@ public class HomePage extends AbstractPane {
                 return;
             }
             ClientHelper.getUser().setUsername(username);
-            lbTitles.setText("Hi " + username + ", please wait :)");
-            lbWelcome.setText("Finding");
+            /*lbTitles.setText("Hi " + username + ", please wait :)");
+            lbWelcome.setText("Finding");*/
 
             TransferHelper.requestChat();
             waitChat:
@@ -275,11 +205,6 @@ public class HomePage extends AbstractPane {
         return worker.getResult();
     }
 
-    private void quit() {
-        ClientHelper.getFrame().dispose();
-        System.exit(0);
-    }
-
     private void cancel() {
         try {
             TransferHelper.stopFindChat();
@@ -298,8 +223,8 @@ public class HomePage extends AbstractPane {
         btnJoin.setText(clickTitle);
         btnJoin.setFont(btnJoin.getFont().deriveFont(Font.BOLD, 24));
         btnQuit.setText("CANCEL");
-        lbWelcome.setText(alert);
-        lbAPPIcon.setIcon(IMAGE_LOADING);
+        /*lbWelcome.setText(alert);
+        lbAPPIcon.setIcon(IMAGE_LOADING);*/
         state = State.LOADING;
     }
 
@@ -310,45 +235,38 @@ public class HomePage extends AbstractPane {
     public void toNormalState(String alert, String clickTitle) {
         if (state == State.NORMAL)
             return;
-        lbAPPIcon.setIcon(IMAGE_ICON);
+        //lbAPPIcon.setIcon(IMAGE_ICON);
         enableComponents();
         btnJoin.setText(clickTitle);
         btnJoin.setFont(FONT_SEGOE_SEMI_PLAIN_14);
         btnQuit.setText("QUIT");
-        lbWelcome.setText(alert);
-        lbTitles.setText("");
+        /*lbWelcome.setText(alert);
+        lbTitles.setText("");*/
         state = State.NORMAL;
     }
 
     public void toDisconnectState() {
         if (state == State.DISCONNECT)
             return;
-        lbAPPIcon.setIcon(IMAGE_ICON);
+        //lbAPPIcon.setIcon(IMAGE_ICON);
         enableComponents();
         btnJoin.setText("RECONNECT");
         btnJoin.setFont(new Font("Cooper Black", Font.PLAIN, 14));
         btnQuit.setText("QUIT");
-        lbWelcome.setText("Disconnected");
-        lbTitles.setText("");
+        /*lbWelcome.setText("Disconnected");
+        lbTitles.setText("");*/
         state = State.DISCONNECT;
     }
 
     public void disableComponents() {
-        txtName.setEnabled(false);
         btnJoin.setEnabled(false);
     }
 
     public void enableComponents() {
-        txtName.setEnabled(true);
         btnJoin.setEnabled(true);
     }
 
     private AnimatedImage bg;
-    private AnimatedImage cover;
-    private JLabel lbAPPIcon;
-    private JLabel lbWelcome;
-    private JLabel lbTitles;
-    private JTextField txtName;
     private JButton btnJoin;
     private JButton btnQuit;
 }

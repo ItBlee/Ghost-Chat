@@ -46,7 +46,6 @@ public interface Resource {
 
     ImageIcon IMAGE_ICON = new ImageIcon(RESOURCE_PATH + "images/icon.png");
     ImageIcon IMAGE_LOADING = new ImageIcon(RESOURCE_PATH + "images/loading.gif");
-    ImageIcon IMAGE_TITLE = new ImageIcon(RESOURCE_PATH + "images/homeBg.gif");
     ImageIcon IMAGE_BACK = new ImageIcon(RESOURCE_PATH + "images/back.png");
     ImageIcon IMAGE_CHECKED = new ImageIcon(RESOURCE_PATH + "images/checked.png");
     ImageIcon IMAGE_REMOVE = new ImageIcon(RESOURCE_PATH + "images/remove.png");
@@ -56,18 +55,18 @@ public interface Resource {
     ImageIcon IMAGE_SEND_FAIL = new ImageIcon(RESOURCE_PATH + "images/sendFail.png");
     ImageIcon IMAGE_VIEW = new ImageIcon(RESOURCE_PATH + "images/view.png");
     ImageIcon IMAGE_HIDDEN = new ImageIcon(RESOURCE_PATH + "images/hidden.png");
-
     ImageIcon[] IMAGE_DIALOG_INVITE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/invite");
     ImageIcon[] IMAGE_DIALOG_CONFIRM = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/confirm");
     ImageIcon[] IMAGE_DIALOG_DECLINE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/decline");
 
-    ImageIcon[] BG_HOME = IconUtil.loadSequence(RESOURCE_PATH + "images/home/bg");
-    ImageIcon[] BG_HOME_INTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/home/home_intro");
+    ImageIcon[] BG_HOME = IconUtil.loadSequence(RESOURCE_PATH + "images/home");
     ImageIcon BG_ERROR = new ImageIcon(RESOURCE_PATH + "images/disconnect.png");
     ImageIcon BG_LOADING = new ImageIcon(RESOURCE_PATH + "images/loading/loading.gif");
-    ImageIcon[] BG_LOADING_INTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/loading/intro");
-    ImageIcon[] BG_LOADING_OUTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/loading/outro");
     ImageIcon BG_LOGIN = new ImageIcon(RESOURCE_PATH + "images/login/login.png");
-    ImageIcon[] BG_LOGIN_SUCCESS = IconUtil.loadSequence(RESOURCE_PATH + "images/login/success");
     ImageIcon BG_DIALOG = new ImageIcon(RESOURCE_PATH + "images/dialog/dialog.png");
+
+    ImageIcon[] COVER_LOGIN_SUCCESS_IN = IconUtil.loadSequence(RESOURCE_PATH + "images/login/success_in");
+    ImageIcon[] COVER_LOGIN_SUCCESS_OUT = IconUtil.loadSequence(RESOURCE_PATH + "images/login/success_out");
+    ImageIcon[] COVER_LOADING_INTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/loading/intro");
+    ImageIcon[] COVER_LOADING_OUTRO = IconUtil.loadSequence(RESOURCE_PATH + "images/loading/outro");
 }

@@ -13,7 +13,7 @@ public class Application {
         setupTheme();
         ClientFrame frame = new ClientFrame();
         EventQueue.invokeLater(() -> frame.setVisible(true));
-        Client.newInstance(frame);
+        Client.init(frame);
         try {
             frame.showLoading();
             Thread.sleep(2000);

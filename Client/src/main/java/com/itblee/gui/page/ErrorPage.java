@@ -66,18 +66,4 @@ public class ErrorPage extends AbstractPane {
     private JButton btnReconnect;
     private JLabel icon;
 
-    @Override
-    public void doIntro() {
-
-    }
-
-    @Override
-    public void doOutro() {
-
-    }
-
-    @Override
-    public void reset() {
-
-    }
 }

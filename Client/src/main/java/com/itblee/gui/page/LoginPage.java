@@ -1,8 +1,6 @@
 package com.itblee.gui.page;
 
-import com.itblee.core.ClientHelper;
 import com.itblee.gui.ClientFrame;
-import com.itblee.gui.component.AnimatedImage;
 import com.itblee.gui.component.AbstractPane;
 import com.itblee.utils.StringUtil;
 
@@ -42,19 +40,6 @@ public class LoginPage extends AbstractPane {
         btnSignup = new JButton();
         lbEye = new JLabel();
 
-        cover = new AnimatedImage(BG_LOADING_OUTRO, 33, 1);
-        success = new AnimatedImage(BG_LOGIN_SUCCESS, 33, 1);
-
-        cover.setFocusable(false);
-        cover.setVisible(false);
-        add(cover);
-        cover.setBounds(0, -38, 365, 735);
-
-        success.setFocusable(false);
-        success.setVisible(false);
-        add(success);
-        success.setBounds(0, 0, 365, 735);
-
         title.setFont(new Font("Segoe UI", Font.BOLD, 26));
         title.setForeground(COLOR_DARK_BLUE);
         add(title);
@@ -74,7 +59,7 @@ public class LoginPage extends AbstractPane {
         txtUsername.setCaretColor(COLOR_DARK_BLUE);
         txtUsername.addActionListener(evt -> {});
         add(txtUsername);
-        txtUsername.setBounds(30, 230, 290, 40);
+        txtUsername.setBounds(25, 230, 290, 40);
         txtUsername.addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -98,7 +83,7 @@ public class LoginPage extends AbstractPane {
         lbEye.setIcon(IMAGE_VIEW);
         lbEye.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         add(lbEye);
-        lbEye.setBounds(300, 325, 16, 16);
+        lbEye.setBounds(295, 325, 16, 16);
         lbEye.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -127,7 +112,7 @@ public class LoginPage extends AbstractPane {
         txtPassword.setCaretColor(COLOR_DARK_BLUE);
         txtPassword.addActionListener(evt -> {});
         add(txtPassword);
-        txtPassword.setBounds(30, 310, 290, 40);
+        txtPassword.setBounds(25, 310, 290, 40);
         txtPassword.addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -158,23 +143,20 @@ public class LoginPage extends AbstractPane {
         lbForgetPwd.setText("Forget  password?");
         lbForgetPwd.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         add(lbForgetPwd);
-        lbForgetPwd.setBounds(220, 360, 100, 20);
+        lbForgetPwd.setBounds(215, 360, 100, 20);
 
         btnLogin.setBackground(COLOR_BLUE);
         btnLogin.setFont(FONT_SEGOE_BOLD_16);
         btnLogin.setForeground(Color.WHITE);
         btnLogin.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         add(btnLogin);
-        btnLogin.setBounds(30, 430, 290, 50);
-        btnLogin.addActionListener(e -> {
-            if (!isLock())
-                complete();
-        });
+        btnLogin.setBounds(25, 430, 290, 50);
+        btnLogin.addActionListener(requireNotLock(e -> complete()));
 
         lbSignup.setFont(FONT_SEGOE_BOLD_17);
         lbSignup.setForeground(Color.WHITE);
         add(lbSignup);
-        lbSignup.setBounds(85, 600, 250, 30);
+        lbSignup.setBounds(80, 600, 250, 30);
 
         btnSignup.setFont(FONT_SEGOE_BOLD_16);
         btnSignup.setForeground(COLOR_ORANGE);
@@ -184,15 +166,12 @@ public class LoginPage extends AbstractPane {
         btnSignup.setContentAreaFilled(false);
         btnSignup.setBorderPainted(false);
         add(btnSignup);
-        btnSignup.setBounds(78, 630, 200, 30);
-        btnSignup.addActionListener(e -> {
-            if (!isLock())
-                switchPage();
-        });
+        btnSignup.setBounds(73, 630, 200, 30);
+        btnSignup.addActionListener(requireNotLock(e -> switchPage()));
 
         bg.setIcon(BG_LOGIN);
         add(bg);
-        bg.setBounds(0, 0, 365, 735);
+        bg.setBounds(0, 0, 350, 735);
     }
 
     private void switchPage() {
@@ -223,47 +202,29 @@ public class LoginPage extends AbstractPane {
 
     @Override
     public void doIntro() {
-        lock();
-        cover.setVisible(true);
-        cover.startAnimation();
-        cover.waitFinish();
-        unlock();
-    }
-
-    @Override
-    public void doOutro() {
-
-    }
-
-    @Override
-    public void reset() {
-        cover.setVisible(false);
-        success.setVisible(false);
-        setEnabled(true);
+        getCover().setImages(COVER_LOADING_OUTRO);
+        getCover().freezeLastFrame(false);
+        super.doIntro();
     }
 
     public void complete() {
-        setEnabled(false);
-        success.setVisible(true);
-        success.startAnimation();
-        new Thread(() -> {
-            success.waitFinish();
-            getOwner().showHome();
-        }).start();
+        getCover().setImages(COVER_LOGIN_SUCCESS_IN);
+        getCover().freezeLastFrame(true);
+        doOutro(() -> getOwner().showHome());
     }
 
     @Override
     protected void lock() {
         super.lock();
-        txtUsername.setEditable(false);
-        txtPassword.setEditable(false);
+        txtUsername.setFocusable(false);
+        txtPassword.setFocusable(false);
     }
 
     @Override
     protected void unlock() {
         super.unlock();
-        txtUsername.setEditable(true);
-        txtPassword.setEditable(true);
+        txtUsername.setFocusable(true);
+        txtPassword.setFocusable(true);
     }
 
     @Override
@@ -274,7 +235,6 @@ public class LoginPage extends AbstractPane {
         }
     }
 
-    private AnimatedImage cover;
     private JLabel title;
     private JLabel title2;
     private JLabel lbForgetPwd;
@@ -284,5 +244,4 @@ public class LoginPage extends AbstractPane {
     private JTextField txtUsername;
     private JPasswordField txtPassword;
     private JLabel lbEye;
-    private AnimatedImage success;
 }

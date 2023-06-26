@@ -21,20 +21,7 @@ public class LoadingPage extends AbstractPane {
         JLabel bg = new JLabel();
         bg.setIcon(BG_LOADING);
         add(bg);
-        bg.setBounds(0, -38, 365, 735);
-    }
-
-    @Override
-    public void doIntro() {
-    }
-
-    @Override
-    public void doOutro() {
-    }
-
-    @Override
-    public void reset() {
-
+        bg.setBounds(0, 0, 350, 735);
     }
 
 }

@@ -72,7 +72,10 @@ public class ChatPage extends AbstractPane {
             btnBack.setBorderPainted(false);
             btnBack.setIcon(IMAGE_BACK);
             btnBack.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            btnBack.addActionListener(e -> backToHome());
+            btnBack.addActionListener(
+                    requireNotLock(e ->
+                            quit(() -> getOwner().showHome())
+                    ));
             chatHeaderPanel.add(btnBack);
             btnBack.setBounds(10, 20, 27, 35);
 
@@ -107,7 +110,7 @@ public class ChatPage extends AbstractPane {
             btnInfo.setBackground(Color.WHITE);
             btnInfo.setIcon(IMAGE_INFO);
             btnInfo.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            btnInfo.addActionListener(e -> showFriendInfo());
+            btnInfo.addActionListener(requireNotLock(e -> showFriendInfo()));
             chatHeaderPanel.add(btnInfo);
             btnInfo.setBounds(302, 21, 28, 29);
         }
@@ -121,7 +124,7 @@ public class ChatPage extends AbstractPane {
         btnSend.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnSend.setFocusPainted(false);
 
-        btnSend.addActionListener(e -> sendMessage());
+        btnSend.addActionListener(requireNotLock(e -> sendMessage()));
         add(btnSend);
         btnSend.setBounds(300, 640, 40, 40);
 
@@ -259,11 +262,6 @@ public class ChatPage extends AbstractPane {
         }
     }
 
-    public void reset() {
-        jChatPanel.removeAll();
-        jChatPanel.revalidate();
-    }
-
     public void appendMessage(JPanel messagePanel) {
         ObjectUtil.requireNonNull(messagePanel);
         jChatPanel.add(messagePanel);
@@ -354,6 +352,38 @@ public class ChatPage extends AbstractPane {
         return messageCount == 0;
     }
 
+    @Override
+    public void doIntro() {
+        getCover().setImages(COVER_LOADING_OUTRO);
+        getCover().freezeLastFrame(false);
+        super.doIntro();
+    }
+
+    private void quit(Runnable runnable) {
+        getCover().setImages(COVER_LOADING_INTRO);
+        getCover().freezeLastFrame(true);
+        doOutro(runnable);
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        jChatPanel.removeAll();
+        jChatPanel.revalidate();
+    }
+
+    @Override
+    protected void lock() {
+        super.lock();
+        txtInput.setFocusable(false);
+        inputArea.setFocusable(false);
+    }
+
+    @Override
+    protected void unlock() {
+        super.unlock();
+    }
+
     private JButton btnBack;
     private JLabel lbStatus;
     private JLabel lbFriendAvatar;
@@ -366,13 +396,5 @@ public class ChatPage extends AbstractPane {
     private JScrollPane chatScrollPane;
     private JTextArea inputArea;
 
-    @Override
-    public void doIntro() {
 
-    }
-
-    @Override
-    public void doOutro() {
-
-    }
 }
