@@ -1,6 +1,7 @@
 package com.itblee.gui.page;
 
 import com.itblee.core.Client;
+import com.itblee.gui.Alert;
 import com.itblee.gui.ClientFrame;
 import com.itblee.gui.component.AbstractPane;
 
@@ -8,21 +9,22 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 
+import static com.itblee.constant.ClientConstant.RESOURCE_PATH;
 import static com.itblee.constant.Resource.*;
 
 public class ErrorPage extends AbstractPane {
 
     public ErrorPage(ClientFrame owner) {
         super(owner);
-        initComponents();
     }
 
-    private void initComponents() {
+    @Override
+    public void initComponents() {
         setOpaque(true);
         setFocusable(true);
 
         icon = new JLabel();
-        icon.setIcon(IMAGE_LOADING);
+        icon.setIcon(new ImageIcon(RESOURCE_PATH + "images/loading.gif"));
         add(icon);
         icon.setBounds(65, 140, 226, 226);
         icon.setVisible(false);
@@ -33,18 +35,17 @@ public class ErrorPage extends AbstractPane {
         btnReconnect.setOpaque(false);
         btnReconnect.setFocusPainted(false);
         btnReconnect.setBackground(COLOR_LIGHT_RED);
-        btnReconnect.setFont(new Font("Cooper Black", Font.PLAIN, 14));
+        btnReconnect.setFont(FONT_COOPER_BLACK_PLAIN_14);
         btnReconnect.setForeground(Color.WHITE);
         btnReconnect.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btnReconnect.addActionListener(e -> reconnect());
         add(btnReconnect);
         btnReconnect.setBounds(79, 555, 200, 40);
-        btnReconnect.addActionListener(e -> reconnect());
 
         JLabel bg = new JLabel();
-        bg.setIcon(BG_ERROR);
+        bg.setIcon(new ImageIcon(RESOURCE_PATH + "images/disconnect.png"));
         add(bg);
-        bg.setBounds(0, -20, 365, 735);
+        bg.setBounds(0, -20, 350, 735);
     }
 
     private void reconnect() {
@@ -53,9 +54,11 @@ public class ErrorPage extends AbstractPane {
         new Thread(() -> {
             try {
                 Client client = Client.getInstance();
-                client.connect();
+                client.getConnection();
                 client.getFrame().showLogin();
             } catch (IOException ignored) {
+            } catch (InterruptedException e) {
+                Alert.showError("Got Error !");
             } finally {
                 btnReconnect.setEnabled(true);
                 icon.setVisible(false);

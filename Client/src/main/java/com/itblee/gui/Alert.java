@@ -1,13 +1,20 @@
 package com.itblee.gui;
 
 import com.itblee.gui.component.Dialog;
-import com.itblee.core.ClientHelper;
+import com.itblee.core.helper.ClientHelper;
 import com.itblee.core.function.Choice;
+import com.itblee.utils.IconUtil;
 import com.itblee.utils.StringUtil;
 
-import static com.itblee.constant.Resource.*;
+import javax.swing.*;
+
+import static com.itblee.constant.ClientConstant.RESOURCE_PATH;
 
 public class Alert {
+
+    private static final ImageIcon[] IMAGE_DIALOG_INVITE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/invite");
+    private static final ImageIcon[] IMAGE_DIALOG_CONFIRM = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/confirm");
+    private static final ImageIcon[] IMAGE_DIALOG_DECLINE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/decline");
 
     public static void showInvite(String message, Choice choice) {
         String content = StringUtil.applyWrapForGUI(message);
@@ -60,6 +67,9 @@ public class Alert {
                 .reply(choice)
                 .build()
                 .display();
+    }
+
+    public static void loadDialogResources() {
     }
 
 }

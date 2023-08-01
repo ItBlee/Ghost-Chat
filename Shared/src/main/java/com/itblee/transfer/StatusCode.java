@@ -8,5 +8,6 @@ public enum StatusCode {
     FORBIDDEN,
     NOT_FOUND,
     CONFLICT,
-    INTERNAL_SERVER_ERROR;
+    TIMEOUT,
+    INTERNAL_SERVER_ERROR
 }

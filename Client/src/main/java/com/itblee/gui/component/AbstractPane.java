@@ -10,19 +10,30 @@ public abstract class AbstractPane extends JLayeredPane {
     private final ClientFrame owner;
     private ClientFrame.Page oldPage;
 
-    private final AnimatedImage cover;
+    private AnimatedImage cover;
 
     private boolean lock = false;
+    private boolean load = false;
 
     public AbstractPane(ClientFrame owner) {
         this.owner = owner;
+        init();
+    }
 
+    private void init() {
         cover = new AnimatedImage(new ImageIcon[] {}, 33, 1);
         cover.setFocusable(false);
         cover.setVisible(false);
         add(cover);
         cover.setBounds(0, 0, 350, 735);
     }
+
+    public void load() {
+        initComponents();
+        load = true;
+    }
+
+    protected abstract void initComponents();
 
     public void from(ClientFrame.Page oldPage) {
         this.oldPage = oldPage;
@@ -40,7 +51,11 @@ public abstract class AbstractPane extends JLayeredPane {
     public void doOutro() {
     }
 
-    public void doOutro(Runnable runnable) {
+    public void changeTo(Runnable runnable) {
+        doOutro(runnable);
+    }
+
+    protected void doOutro(Runnable runnable) {
         lock();
         cover.setVisible(true);
         cover.startAnimation();
@@ -73,6 +88,10 @@ public abstract class AbstractPane extends JLayeredPane {
             if (!lock)
                 actionListener.actionPerformed(e);
         };
+    }
+
+    public boolean isLoaded() {
+        return load;
     }
 
     protected void lock() {

@@ -1,6 +1,6 @@
 package com.itblee.exception;
 
-public class UnauthenticatedException extends RuntimeException{
+public class UnauthenticatedException extends Exception {
 
 	public UnauthenticatedException() {
 	}

@@ -1,23 +1,23 @@
 package com.itblee.gui;
 
-import com.itblee.constant.Resource;
-import com.itblee.core.ClientHelper;
-import com.itblee.core.TransferHelper;
+import com.itblee.core.helper.ClientHelper;
+import com.itblee.gui.component.MessageBox;
 import com.itblee.gui.component.MoveJFrame;
 import com.itblee.gui.component.AbstractPane;
 import com.itblee.gui.page.*;
 import com.itblee.model.FriendInfo;
 import com.itblee.model.Message;
-import com.itblee.utils.ObjectUtil;
+import com.itblee.utils.DateUtil;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.List;
 
+import static com.itblee.constant.ClientConstant.RESOURCE_PATH;
 import static com.itblee.constant.Resource.*;
 
 public class ClientFrame extends MoveJFrame {
@@ -37,11 +37,10 @@ public class ClientFrame extends MoveJFrame {
 
 	public ClientFrame() {
 		initComponents();
-		setPage(Page.CHAT);
 	}
 
 	private void initComponents() {
-		pages = new LinkedHashMap<>();
+		pages = new HashMap<>();
 		pages.put(Page.LOADING, new LoadingPage(this));
 		pages.put(Page.DISCONNECT, new ErrorPage(this));
 		pages.put(Page.LOGIN, new LoginPage(this));
@@ -59,7 +58,7 @@ public class ClientFrame extends MoveJFrame {
 		setTitle("GHOST CHAT");
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		setResizable(false);
-		setIconImage(Resource.IMAGE_ICON.getImage());
+		setIconImage(new ImageIcon(RESOURCE_PATH + "images/icon.png").getImage());
 		setSize(350, 735);
 		setLocationRelativeTo(getOwner());
 		JRootPane rootPane = getRootPane();
@@ -81,73 +80,41 @@ public class ClientFrame extends MoveJFrame {
 		});
 	}
 
-	public void showLoading() {
-		setPage(Page.LOADING);
-	}
-
-	public void showDisconnect() {
-		setPage(Page.DISCONNECT);
-	}
-
-	public void showLogin() {
-		setPage(Page.LOGIN);
-	}
-
-	public void showHome() {
-		setPage(Page.HOME);
-	}
-
-	public void showChat() {
-		setPage(Page.CHAT);
-	}
-
 	public void appendReceive(Message message) {
-		if (current != Page.CHAT)
-			return;
-		JPanel receivePanel = ChatUtil.renderReceiveMsg(message.getBody(), message.getSentDate());
-		((ChatPage) getCurrent()).appendMessage(receivePanel);
+		Date date = DateUtil.stringToDate(message.getSentDate());
+		MessageBox receiveMsg = ChatUtil.renderReceiveMsg(message.getBody(), date);
+		getChatPage().appendMessage(receiveMsg);
 	}
 
-	public void setFriendInfo(FriendInfo info) {
-		if (current != Page.CHAT)
-			return;
-		((ChatPage) getCurrent()).updateInfo(info);
-	}
-
-	public void goTo(Page page, Object... params) {
-		switch (page) {
-			case HOME:
-				goHomePage();
-				break;
-			case CHAT:
-				goChatPage((FriendInfo) params[0]);
+	public void appendHistory(List<Message> messages) {
+		ChatPage chatPage = getChatPage();
+		MessageBox messageBox;
+		String username = ClientHelper.getUser().getUsername();
+		for (Message message : messages) {
+			Date date = DateUtil.stringToDate(message.getSentDate());
+			if (message.getSender().equals(username))
+				messageBox = ChatUtil.renderSendMsg(message.getBody(), date);
+			else messageBox = ChatUtil.renderReceiveMsg(message.getBody(), date);
+			chatPage.appendMessage(messageBox);
 		}
 	}
 
-	private void goHomePage() {
-		if (current == Page.HOME)
-			return;
-		setPage(Page.HOME);
-		((HomePage) getCurrent()).toNormalState();
+	public void setFriendInfo(FriendInfo info) {
+		getChatPage().updateInfo(info);
 	}
 
-	private void goChatPage(FriendInfo info) {
-		if (current == Page.CHAT)
-			return;
-		setPage(Page.CHAT);
-		ObjectUtil.requireNonNull(info);
-		((ChatPage) getCurrent()).reset();
-		((ChatPage) getCurrent()).updateInfo(info);
+	private ChatPage getChatPage() {
+		ChatPage chatPage = (ChatPage) pages.get(Page.CHAT);
+		if (!chatPage.isLoaded())
+			chatPage.load();
+		return chatPage;
 	}
 
 	@Override
 	public void dispose() {
-		if (ClientHelper.isConnected()) {
-			try {
-				TransferHelper.closeConnect();
-				ClientHelper.close();
-			} catch (IOException ignored) {}
-		}
+		try {
+			ClientHelper.closeConnection();
+		} catch (Exception ignored) {}
 		super.dispose();
 	}
 
@@ -156,6 +123,12 @@ public class ClientFrame extends MoveJFrame {
 		current = page;
 		AbstractPane oldPage = pages.get(old);
 		Color titleBarColor;
+		try {
+			String username = ClientHelper.getUser().getUsername();
+			if (username != null)
+				setTitle("GHOST CHAT - " + username);
+			else setTitle("GHOST CHAT");
+		} catch (Exception ignored) {}
 		switch (page) {
 			case CHAT:
 			case LOADING:
@@ -169,16 +142,75 @@ public class ClientFrame extends MoveJFrame {
 				titleBarColor = COLOR_SEMI_BLACK;
 		}
 		oldPage.doOutro();
-		card.show(getContentPane(), current.name());
 		AbstractPane newPage = pages.get(current);
 		newPage.from(old);
+		if (!newPage.isLoaded())
+			newPage.load();
+		card.show(getContentPane(), current.name());
 		newPage.doIntro();
 		getRootPane().putClientProperty("JRootPane.titleBarBackground", titleBarColor);
 		oldPage.reset();
 	}
 
-	private JComponent getCurrent() {
+	private void loadPage(Page page) {
+		pages.get(page).load();
+	}
+
+	public AbstractPane getCurrent() {
 		return pages.get(current);
+	}
+
+	public AbstractPane getPage(Page page) {
+		return pages.get(page);
+	}
+
+	public void showLoading() {
+		setPage(Page.LOADING);
+	}
+
+	public void showDisconnect() {
+		setPage(Page.DISCONNECT);
+	}
+
+	public void showLogin() {
+		setPage(Page.LOGIN);
+	}
+
+	public void showHome() {
+		if (!ClientHelper.authenticated()) {
+			showLogin();
+			return;
+		}
+		setPage(Page.HOME);
+	}
+
+	public void showChat(FriendInfo info) {
+		if (!ClientHelper.authenticated()) {
+			showLogin();
+			return;
+		}
+		setPage(Page.CHAT);
+		setFriendInfo(info);
+	}
+
+	public void loadLoading() {
+		loadPage(Page.LOADING);
+	}
+
+	public void loadDisconnect() {
+		loadPage(Page.DISCONNECT);
+	}
+
+	public void loadLogin() {
+		loadPage(Page.LOGIN);
+	}
+
+	public void loadHome() {
+		loadPage(Page.HOME);
+	}
+
+	public void loadChat() {
+		loadPage(Page.CHAT);
 	}
 
 }

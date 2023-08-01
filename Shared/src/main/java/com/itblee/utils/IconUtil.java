@@ -14,6 +14,8 @@ public final class IconUtil {
             "png", "gif", "jpeg", "jpg", "bmp"
     };
 
+    static final Color COLOR_TRANSPARENT = new Color(0, 0, 0, 0);
+
     public static String encode(ImageIcon imageIcon) {
         return Base64.getEncoder().encodeToString(imageToByteArray(imageIcon));
     }
@@ -26,7 +28,7 @@ public final class IconUtil {
 
     public static byte[] imageToByteArray(ImageIcon imageIcon) {
         try {
-            BufferedImage image = new BufferedImage(imageIcon.getIconWidth(), imageIcon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
+            BufferedImage image = new BufferedImage(imageIcon.getIconWidth(), imageIcon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
             ByteArrayOutputStream b = new ByteArrayOutputStream();
 
             Graphics g = image.createGraphics();
@@ -47,7 +49,9 @@ public final class IconUtil {
         try {
             byte[] btDataFile = Base64.getDecoder().decode(encodeImage);
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(btDataFile));
-            return new ImageIcon(image);
+            BufferedImage alphaImg = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            alphaImg.createGraphics().drawImage(image, 0, 0, COLOR_TRANSPARENT, null);
+            return new ImageIcon(alphaImg);
         } catch (IOException ex) {
             System.out.println(ex.getLocalizedMessage());
             return null;

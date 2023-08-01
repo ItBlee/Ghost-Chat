@@ -1,29 +1,15 @@
 package com.itblee;
 
 import com.formdev.flatlaf.FlatIntelliJLaf;
-import com.itblee.gui.ServerGUI;
-import com.itblee.core.Gate;
-import com.itblee.core.Impl.GateImpl;
-import com.itblee.core.Impl.SecureGate;
-import com.itblee.core.Server;
+import com.itblee.gui.LauncherFrame;
 
-import java.io.IOException;
+import java.awt.*;
 
 public class Application {
 
     public static void main(String[] args) {
-
-    }
-
-    public static void invokeGUI() {
         FlatIntelliJLaf.setup();
-        ServerGUI.showAuthenticationFrame();
-    }
-
-    public static void setupServer() throws IOException {
-        Gate mainGate = new GateImpl(5000);
-        Gate secureGate = new SecureGate(5005, "");
-        Server.launch();
+        EventQueue.invokeLater(() -> new LauncherFrame().setVisible(true));
     }
 
 }

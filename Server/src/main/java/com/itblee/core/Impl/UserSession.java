@@ -1,17 +1,25 @@
 package com.itblee.core.Impl;
 
 import com.itblee.core.ChatRoom;
-import com.itblee.security.Certificate;
+import com.itblee.repository.document.Log;
 import com.itblee.security.User;
 
 import java.io.Serializable;
+import java.util.*;
 
 public class UserSession extends User implements Serializable {
+    private final Map<String, List<Log>> logMap;
     private Status status;
-    private long createdTime;
+    private Long latestAccessTime;
     private ChatRoom currentRoom;
 
+    public UserSession() {
+        logMap = Collections.synchronizedMap(new HashMap<>());
+        status = Status.OFFLINE;
+    }
+
     public enum Status {
+        BANNED,
         OFFLINE,
         ONLINE;
 
@@ -20,22 +28,16 @@ public class UserSession extends User implements Serializable {
         }
     }
 
-    public UserSession(Certificate certificate) {
-        super(certificate);
-        this.status = Status.OFFLINE;
-        this.createdTime = System.currentTimeMillis();
+    public Long getLatestAccessTime() {
+        return latestAccessTime;
     }
 
-    public long getCreatedTime() {
-        return createdTime;
+    public String getIp() {
+        return getWorker() != null ? getWorker().getIp() : null;
     }
 
-    public void setCreatedTime(long createdTime) {
-        this.createdTime = createdTime;
-    }
-
-    public void renew() {
-        createdTime = System.currentTimeMillis();
+    public void resetTimer() {
+        latestAccessTime = System.currentTimeMillis();
     }
 
     public void offline() {
@@ -46,12 +48,24 @@ public class UserSession extends User implements Serializable {
         status = Status.ONLINE;
     }
 
+    public void ban() {
+        status = Status.BANNED;
+    }
+
     public boolean isOnline() {
-        return status == Status.OFFLINE;
+        return status == Status.ONLINE;
+    }
+
+    public boolean isBanned() {
+        return status == Status.BANNED;
     }
 
     public Status getStatus() {
         return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     public ChatRoom getRoom() {
@@ -64,5 +78,18 @@ public class UserSession extends User implements Serializable {
 
     public void leaveRoom() {
         currentRoom = null;
+    }
+
+    public void log(Log log) {
+        logMap.computeIfAbsent(log.getUsername(), s -> new ArrayList<>())
+                .add(log);
+    }
+
+    public Map<String, List<Log>> getLogs() {
+        return logMap;
+    }
+
+    public List<Log> getLogs(String username) {
+        return logMap.get(username);
     }
 }

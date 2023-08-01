@@ -43,9 +43,9 @@ public class AnimatedImage extends JLabel {
             if (currentImage == 0)
                 currentImage = images.length - 1;
         }
-        if (images[currentImage].getImageLoadStatus() == MediaTracker.COMPLETE) {
+        if (images.length > 0 && images[currentImage].getImageLoadStatus() == MediaTracker.COMPLETE) {
             images[currentImage].paintIcon(this, g, 0, 0);
-            System.out.println(images[currentImage]);
+            //System.out.println(images[currentImage]);
         }
     }
 

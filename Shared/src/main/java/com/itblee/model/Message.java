@@ -1,17 +1,15 @@
 package com.itblee.model;
 
-import java.util.UUID;
-
 public class Message {
-    private UUID sender;
+    private String sender;
     private String body;
     private String sentDate;
 
-    public UUID getSender() {
+    public String getSender() {
         return sender;
     }
 
-    public void setSender(UUID sender) {
+    public void setSender(String sender) {
         this.sender = sender;
     }
 

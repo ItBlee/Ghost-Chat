@@ -5,6 +5,7 @@ import com.itblee.core.Dispatcher;
 import com.itblee.core.Gate;
 import com.itblee.core.Worker;
 import com.itblee.core.impl.WorkerImpl;
+import com.itblee.utils.PropertyUtil;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
@@ -17,33 +18,23 @@ import java.util.concurrent.TimeUnit;
 
 public class DispatcherImpl extends Thread implements Dispatcher {
 
-    public static final int EXECUTOR_CORE = 3;
-
-    public static final int EXECUTOR_MAX = 5;
-
-    public static final int EXECUTOR_CAPACITY = 10;
-
-    public static final int EXECUTOR_ALIVE_TIME = 1;
-
-    public static final TimeUnit EXECUTOR_TIME_UNIT = TimeUnit.MINUTES;
-
-    private final Gate parentGate;
+    private final Gate gate;
     private final ExecutorService executor;
     private Controller controller;
     private int timeout;
 
-    public DispatcherImpl(Gate parentGate) {
-        this(parentGate, 0);
+    public DispatcherImpl(Gate gate) {
+        this(gate, 0);
     }
 
-    public DispatcherImpl(Gate parentGate, int workerTimeout) {
-        this.parentGate = parentGate;
+    public DispatcherImpl(Gate gate, int workerTimeout) {
+        this.gate = gate;
         this.executor = new ThreadPoolExecutor(
-                EXECUTOR_CORE,
-                EXECUTOR_MAX,
-                EXECUTOR_ALIVE_TIME,
-                EXECUTOR_TIME_UNIT,
-                new ArrayBlockingQueue<>(EXECUTOR_CAPACITY),
+                PropertyUtil.getInt("pool.min"),
+                PropertyUtil.getInt("pool.max"),
+                PropertyUtil.getInt("pool.alive"),
+                TimeUnit.valueOf(PropertyUtil.getString("pool.time.unit")),
+                new ArrayBlockingQueue<>(PropertyUtil.getInt("pool.queue.capacity")),
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
         this.timeout = workerTimeout;
@@ -51,19 +42,24 @@ public class DispatcherImpl extends Thread implements Dispatcher {
 
     @Override
     public void run() {
-        while (!this.isInterrupted() && !parentGate.isClosed()) {
+        while (!this.isInterrupted() && !gate.isClosed()) {
             try {
                 Socket socket;
-                synchronized (parentGate) {
-                    socket = parentGate.accept();
+                synchronized (gate) {
+                    socket = gate.accept();
                 }
-                Worker worker = socket instanceof SSLSocket ? new WorkerImpl(socket) : new SecureWorker(socket);
+                Worker worker;
+                if (socket instanceof SSLSocket) {
+                    worker = new WorkerImpl(socket);
+                    System.out.println(worker.getIp() + " connected verify");
+                } else {
+                    worker = new SecureWorker(socket);
+                    System.out.println(worker.getIp() + " connected");
+                }
                 worker.setController(controller);
                 worker.setSoTimeout(timeout);
                 executor.execute(worker);
-            } catch (SecurityException | ServerNotActiveException | IOException e) {
-                e.printStackTrace();
-            }
+            } catch (SecurityException | ServerNotActiveException | IOException ignored) {}
         }
     }
 

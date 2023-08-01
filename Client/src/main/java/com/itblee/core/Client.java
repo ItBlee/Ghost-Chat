@@ -1,39 +1,36 @@
 package com.itblee.core;
 
-import com.itblee.core.impl.WorkerImpl;
-import com.itblee.gui.ClientFrame;
-import com.itblee.constant.ClientMethod;
 import com.itblee.core.Impl.ConnectorImpl;
 import com.itblee.core.Impl.SecureConnector;
 import com.itblee.core.Impl.SecureWorker;
-import com.itblee.security.Certificate;
-import com.itblee.security.EncryptUtil;
+import com.itblee.core.helper.TransferHelper;
+import com.itblee.core.impl.WorkerImpl;
+import com.itblee.exception.UnverifiedException;
+import com.itblee.gui.ClientFrame;
 import com.itblee.security.User;
-import com.itblee.transfer.DataKey;
-import com.itblee.transfer.Header;
 import com.itblee.transfer.Packet;
-import com.itblee.utils.JsonParser;
-import com.itblee.utils.ObjectUtil;
-import com.itblee.utils.ValidateUtil;
+import com.itblee.transfer.Request;
+import com.itblee.utils.*;
 
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
-import java.net.ConnectException;
-
-import static com.itblee.constant.ClientConstant.*;
 
 public class Client {
 
     private static Client client;
 
     private final ClientFrame frame;
+    private final ClientService service;
 
     private User user;
     private Connector connector;
+    private Connector sslConnector;
     private Worker worker;
+    private Worker sslWorker;
 
     private Client(ClientFrame frame) {
         this.frame = frame;
+        service = new ClientService();
     }
 
     public static synchronized Client init(ClientFrame frame) {
@@ -43,7 +40,16 @@ public class Client {
         if (client != null)
             throw new IllegalStateException("Already initialized clientLauncher !");
         client = new Client(frame);
+        client.loadLocalSession();
         return client;
+    }
+
+    private void loadLocalSession() {
+        if (user == null)
+            user = new User();
+        user.setCertificate(SessionUtil.load());
+        if (user.getCertificate() != null)
+            System.out.println("Loaded Session: " + user.getUid() + "|" + user.getSecretKey());
     }
 
     public static synchronized Client getInstance() {
@@ -52,53 +58,99 @@ public class Client {
         return client;
     }
 
-    public Worker connect() throws IOException {
-        if (user == null || !ValidateUtil.isValid(user.getCertificate()))
-            requestSession();
-        if (connector instanceof ConnectorImpl && connector.isConnected())
+    public Worker getConnection() throws IOException, InterruptedException {
+        try {
+            return connect();
+        } catch (UnverifiedException e) {
+            try {
+                service.verify();
+                return connect();
+            } catch (UnverifiedException ignored) {
+                throw new IOException();
+            }
+        }
+    }
+
+    public Worker connect() throws IOException, UnverifiedException {
+        if(!verified())
+            throw new UnverifiedException();
+        if (connector != null && worker != null
+                && connector.isConnected() && worker.isAlive())
+            return worker;
+        if (connector != null && worker != null
+                && (connector.isClosed() || worker.isInterrupted()))
             return reconnect();
-        connector = new ConnectorImpl(IP, PORT);
+        String ip = PropertyUtil.getString("connect.ip");
+        int port = PropertyUtil.getInt("connect.port");
+        connector = new ConnectorImpl(ip, port);
         worker = new SecureWorker(connector.connect());
-        worker.setController(ClientMethod.CONNECT);
+        worker.setController(RequestMapping.CONNECT);
+        worker.setUid(user.getUid());
         worker.start();
         return worker;
     }
 
-    public Worker reconnect() throws IOException {
-        if (!(connector instanceof ConnectorImpl) || !(worker instanceof SecureWorker))
+    public Worker reconnect() throws IOException, UnverifiedException {
+        if(!verified())
+            throw new UnverifiedException();
+        if (connector == null)
             throw new IllegalStateException("Client not initialized connection.");
-        worker.close();
+        if (worker != null)
+            worker.close();
         worker = new SecureWorker(connector.reconnect());
-        worker.setController(ClientMethod.CONNECT);
+        worker.setController(RequestMapping.CONNECT);
+        worker.setUid(user.getUid());
         worker.start();
         return worker;
     }
 
-    public void requestSession() throws IOException {
-        if (user == null) {
-            Certificate certificate = new Certificate(null, EncryptUtil.generateSecretKey());
-            user = new User(certificate);
-        } else user.setSecretKey(EncryptUtil.generateSecretKey());
-
-        Connector connector = new SecureConnector(IP, PORT_SECURE, TRUST_STORE_PWD);
-        SSLSocket sslSocket = (SSLSocket) connector.connect();
-
-        Packet request = TransferHelper.get();
-        request.setHeader(Header.AUTH_REGISTER);
-        request.putData(DataKey.SECRET_KEY, user.getSecretKey());
-        request.putData(DataKey.SESSION_ID, user.getUid());
-        Worker worker = new WorkerImpl(sslSocket);
-        worker.setController(ClientMethod.AUTH);
-        worker.send(JsonParser.toJson(request));
-        worker.run();
+    public Worker connectSSL() throws IOException {
+        if (sslConnector != null && sslWorker != null
+                && sslConnector.isConnected() && sslWorker.isAlive())
+            return sslWorker;
+        if (sslConnector != null && sslWorker != null
+                && (sslConnector.isClosed() || sslWorker.isInterrupted()))
+            return reconnectSSL();
+        String trust_store_pwd = PropertyUtil.getString("jsse.truststore.pwd");
+        String ip = PropertyUtil.getString("connect.ip");
+        int portSecure = PropertyUtil.getInt("connect.auth.port");
+        sslConnector = new SecureConnector(ip, portSecure, trust_store_pwd);
+        SSLSocket sslSocket = (SSLSocket) sslConnector.connect();
+        sslWorker = new WorkerImpl(sslSocket);
+        sslWorker.setController(RequestMapping.SSL);
+        sslWorker.start();
+        return sslWorker;
     }
 
-    public Worker requireConnection() throws IOException {
-        if (connector == null || !connector.isConnected())
-            return worker = connect();
-        if (connector != null && connector.isClosed())
-            return worker = reconnect();
-        throw new ConnectException();
+    public Worker reconnectSSL() throws IOException {
+        if (sslConnector == null)
+            throw new IllegalStateException("Client not initialized auth connection.");
+        if (sslWorker != null)
+            sslWorker.close();
+        SSLSocket sslSocket = (SSLSocket) sslConnector.reconnect();
+        sslWorker = new WorkerImpl(sslSocket);
+        sslWorker.setController(RequestMapping.SSL);
+        sslWorker.start();
+        return sslWorker;
+    }
+
+    public void closeConnection() throws IOException {
+        if (sslWorker != null && sslWorker.isAlive()) {
+            Packet request = TransferHelper.get();
+            request.setHeader(Request.BREAK_CONNECT);
+            sslWorker.send(JsonParser.toJson(request));
+            sslWorker.close();
+            sslConnector = null;
+            sslWorker = null;
+        }
+        if (worker != null && worker.isAlive()) {
+            TransferHelper.closeConnect();
+            worker.close();
+            connector = null;
+            worker = null;
+        }
+        if (verified())
+            SessionUtil.save();
     }
 
     public Connector getConnector() {
@@ -109,12 +161,31 @@ public class Client {
         return frame;
     }
 
+    public ClientService getService() {
+        return service;
+    }
+
     public Worker getWorker() {
         return worker;
     }
 
     public User getUser() {
         return user;
+    }
+    public void toAnonymous() {
+        user.setUsername(null);
+    }
+
+    public boolean verified() {
+        return ValidateUtil.isValidCertificate(user.getCertificate());
+    }
+
+    public boolean authenticated() {
+        return !anonymous();
+    }
+
+    public boolean anonymous() {
+        return StringUtil.isBlank(user.getUsername());
     }
 
 }

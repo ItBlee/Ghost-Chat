@@ -1,13 +1,14 @@
 package com.itblee.gui.component;
 
 import com.itblee.core.function.Choice;
+import com.itblee.utils.PropertyUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.Objects;
 
-import static com.itblee.constant.ClientConstant.REQUEST_TIMEOUT;
+import static com.itblee.constant.ClientConstant.RESOURCE_PATH;
 import static com.itblee.constant.Resource.*;
 
 public class Dialog extends JDialog {
@@ -19,7 +20,7 @@ public class Dialog extends JDialog {
 		private Choice choice;
 		private String message = "ALERT";
 		private boolean isAlert = false;
-		private AnimatedImage icon = new AnimatedImage(IMAGE_DIALOG_INVITE);
+		private AnimatedImage icon = new AnimatedImage(null);
 		private Color fontColor = COLOR_DARK_BLUE;
 		private String acceptTitle = "OK";
 		private String declineTitle = "CANCEL";
@@ -97,10 +98,10 @@ public class Dialog extends JDialog {
 		setResizable(false);
 		setUndecorated(true);
 		getRootPane().setOpaque(false);
-		setBackground(TRANSPARENT);
+		setBackground(COLOR_TRANSPARENT);
 		Container contentPane = getContentPane();
 		contentPane.setLayout(new BorderLayout());
-		contentPane.setBackground(TRANSPARENT);
+		contentPane.setBackground(COLOR_TRANSPARENT);
 
 		//======== buttonBar ========
 		{
@@ -158,32 +159,29 @@ public class Dialog extends JDialog {
 		contentPane.add(mainPanel, BorderLayout.CENTER);
 		mainPanel.setBounds(0, 210, 350, 200);
 
-		bg.setIcon(BG_DIALOG);
+		bg.setIcon(new ImageIcon(RESOURCE_PATH + "images/dialog/dialog.png"));
 		contentPane.add(bg);
 
-		setSize(350, 428);
+		setSize(350, 430);
 		setLocationRelativeTo(getOwner());
-		setLocation(getX() + 2,getY() + 180);
-	}
-
-	@Override
-	public void setVisible(boolean b) {
-		super.setVisible(b);
-		owner.setEnabled(!b);
-		owner.getRootPane().getGlassPane().setVisible(b);
+		setLocation(getX()+1,getY() + 180);
 	}
 
 	public void display() {
 		startTimer();
 		setVisible(true);
+		owner.setEnabled(false);
+		owner.getRootPane().getGlassPane().setVisible(true);
 		icon.startAnimation();
 	}
 
 	private void exit() {
-		owner.setVisible(false);
-		icon.stopAnimation();
+		owner.setEnabled(true);
+		owner.getRootPane().getGlassPane().setVisible(false);
 		dispose();
-		timer.interrupt();
+		icon.stopAnimation();
+		if (timer != null)
+			timer.interrupt();
 	}
 
 	private void onClickAccept() {
@@ -211,13 +209,14 @@ public class Dialog extends JDialog {
 	private void startTimer() {
 		JButton button = isAlert ? okButton : declineButton;
 		timer = new Thread(() -> {
-			int timeout = REQUEST_TIMEOUT;
+			int timeout = PropertyUtil.getInt("request.timeout");
+			int timer = timeout;
 			String title = button.getText();
 			try {
-				while (timeout > 0) {
-					button.setText(title + " (" + (timeout / 1000) + ")");
-					Thread.sleep(REQUEST_TIMEOUT / 10);
-					timeout -= (REQUEST_TIMEOUT / 10);
+				while (timer > 0) {
+					button.setText(title + " (" + (timer / 1000) + ")");
+					Thread.sleep(timeout / 10);
+					timer -= (timeout / 10);
 				}
 			} catch (InterruptedException ignored) {}
 			button.doClick();

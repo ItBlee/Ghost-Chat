@@ -2,6 +2,7 @@ package com.itblee;
 
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.itblee.core.Client;
+import com.itblee.gui.Alert;
 import com.itblee.gui.ClientFrame;
 
 import javax.swing.*;
@@ -12,21 +13,13 @@ public class Application {
     public static void main(String[] args) {
         setupTheme();
         ClientFrame frame = new ClientFrame();
-        EventQueue.invokeLater(() -> frame.setVisible(true));
         Client.init(frame);
-        try {
-            frame.showLoading();
-            Thread.sleep(2000);
-            frame.showLogin();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        /*try {
-            Client.newInstance(frame).requestSession();
-            frame.showLogin();
-        } catch (IOException e) {
-            frame.showDisconnect();
-        }*/
+        frame.showLoading();
+        EventQueue.invokeLater(() -> frame.setVisible(true));
+        frame.loadLogin();
+        Alert.loadDialogResources();
+        frame.loadHome();
+        frame.showLogin();
     }
 
     public static void setupTheme() {

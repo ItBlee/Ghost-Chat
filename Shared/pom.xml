@@ -15,7 +15,7 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <jsse.version>1.0.4.1</jsse.version>
+        <jsse.version>1.0.4</jsse.version>
         <gson.version>2.9.0</gson.version>
         <word-wrap.version>0.1.9</word-wrap.version>
         <flatlaf.version>3.0</flatlaf.version>

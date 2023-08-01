@@ -26,10 +26,10 @@ public final class StringUtil {
         return !isBlank(cs);
     }
 
-    public static boolean requireNonBlank(final CharSequence cs) {
+    public static String requireNonBlank(final String cs) {
         if (isBlank(cs))
             throw new IllegalArgumentException();
-        return isNotBlank(cs);
+        return cs;
     }
 
     public static boolean containsBlank(final CharSequence[] arr) {
@@ -64,7 +64,10 @@ public final class StringUtil {
     }
 
     public static void copyToClipboard(String textToCopy) {
-        StringSelection stringSelection = new StringSelection(textToCopy);
+        String format = textToCopy.replace("<html>", "")
+                .replace("</html>", "")
+                .replace("<br/>", " ");
+        StringSelection stringSelection = new StringSelection(format);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
     }

@@ -47,17 +47,13 @@ public final class EncryptUtil {
         }
     }
 
-    public static String decrypt(String ciphertext, String secretKey) {
-        try {
-            byte[] byteEncrypted = Base64.getDecoder().decode(ciphertext);
-            SecretKeySpec sKeySpec = new SecretKeySpec(secretKey.getBytes(), ALGORITHM);
-            Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
-            cipher.init(Cipher.DECRYPT_MODE, sKeySpec);
-            byte[] byteDecrypted = cipher.doFinal(byteEncrypted);
-            return new String(byteDecrypted);
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException(e);
-        }
+    public static String decrypt(String ciphertext, String secretKey) throws Exception {
+        byte[] byteEncrypted = Base64.getDecoder().decode(ciphertext);
+        SecretKeySpec sKeySpec = new SecretKeySpec(secretKey.getBytes(), ALGORITHM);
+        Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
+        cipher.init(Cipher.DECRYPT_MODE, sKeySpec);
+        byte[] byteDecrypted = cipher.doFinal(byteEncrypted);
+        return new String(byteDecrypted);
     }
 
 }

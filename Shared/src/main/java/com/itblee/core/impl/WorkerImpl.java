@@ -3,27 +3,29 @@ package com.itblee.core.impl;
 import com.google.gson.JsonParseException;
 import com.itblee.core.Controller;
 import com.itblee.core.Worker;
+import com.itblee.core.function.Listenable;
 import com.itblee.transfer.Packet;
 import com.itblee.utils.JsonParser;
+import com.itblee.utils.StringUtil;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.security.KeyException;
 import java.util.Objects;
 import java.util.UUID;
 
 public class WorkerImpl extends Thread implements Worker {
 
-    protected UUID uid;
-    protected final Socket socket;
-    protected final BufferedReader reader;
-    protected final BufferedWriter writer;
-    protected Controller controller;
+    private UUID uid;
+    private final Socket socket;
+    private final BufferedReader reader;
+    private final BufferedWriter writer;
+    private Controller controller;
 
-    protected String lastMessage;
-    protected boolean isListening;
-    protected Packet result;
+    private boolean isListening;
+    private Packet result;
 
     public WorkerImpl(Socket socket) throws IOException {
         this.socket = socket;
@@ -40,38 +42,34 @@ public class WorkerImpl extends Thread implements Worker {
                 String message;
                 try {
                     message = receive();
-                } catch (SocketTimeoutException ignored) {
+                    if (StringUtil.isBlank(message))
+                        continue;
+                } catch (SocketTimeoutException e) {
                     close();
-                    System.out.println("Worker " + uid + "time out !");
                     break;
                 }
-
                 Packet data = JsonParser.fromJson(message, Packet.class)
                         .orElseThrow(() -> new JsonParseException("Invalid message type (require JSON) !"));
-
                 controller.resolve(this, data);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            } catch (Exception ignored) {}
         }
     }
 
     @Override
-    public void send(String message) throws IOException {
+    public void send(String message) throws IOException, SecurityException {
         writer.write(message);
         writer.newLine();
         writer.flush();
-        lastMessage = message;
+        System.out.println("s:" + message);
     }
 
-    @Override
-    public void resend() throws IOException {
-        send(lastMessage);
-    }
 
     @Override
-    public String receive() throws IOException {
-        return reader.readLine();
+    public String receive() throws IOException, SecurityException {
+        String rei = reader.readLine();
+        if (StringUtil.isNotBlank(rei))
+            System.out.println("r:" + rei);
+        return rei;
     }
 
     @Override
@@ -83,6 +81,7 @@ public class WorkerImpl extends Thread implements Worker {
         if (socket != null)
             socket.close();
         interrupt();
+        System.out.println(uid + " worker closed");
     }
 
     @Override
@@ -103,16 +102,24 @@ public class WorkerImpl extends Thread implements Worker {
 
     @Override
     public synchronized Packet await(long timeout) throws InterruptedException {
-        startListening();
-        long startTime = System.currentTimeMillis();
-        while (isListening()) {
-            wait(timeout);
-            if (timeout > 0L && (System.currentTimeMillis() - timeout) >= startTime) {
-                if (result == null)
-                    result = new Packet();
-                stopListening();
+        return await(() -> {
+            long startTime = System.currentTimeMillis();
+            while (isListening()) {
+                wait(timeout);
+                if (timeout > 0L && (System.currentTimeMillis() - timeout) >= startTime) {
+                    if (result == null)
+                        result = new Packet();
+                    break;
+                }
             }
-        }
+        });
+    }
+
+    @Override
+    public Packet await(Listenable listenable) throws InterruptedException {
+        startListening();
+        listenable.listen();
+        stopListening();
         return getResult();
     }
 
@@ -123,8 +130,11 @@ public class WorkerImpl extends Thread implements Worker {
 
     @Override
     public Packet getResult() {
-        Packet temp = result.clone();
-        result = null;
+        Packet temp;
+        if (result != null) {
+            temp = result.clone();
+            result = null;
+        } else temp = new Packet();
         return temp;
     }
 
@@ -146,6 +156,13 @@ public class WorkerImpl extends Thread implements Worker {
     @Override
     public Socket getSocket() {
         return socket;
+    }
+
+    @Override
+    public String getIp() {
+        if (socket.isClosed())
+            return null;
+        return socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
     }
 
     @Override

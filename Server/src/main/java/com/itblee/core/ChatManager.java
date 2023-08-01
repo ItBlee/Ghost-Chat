@@ -1,11 +1,9 @@
 package com.itblee.core;
 
 import com.itblee.core.Impl.UserSession;
-import com.itblee.security.User;
+import com.itblee.core.helper.ServerHelper;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ChatManager {
 
@@ -19,35 +17,42 @@ public class ChatManager {
         Queue<UUID> queue = new LinkedList<>(available);
         if (rejectionMap.containsKey(userId))
             queue.removeAll(rejectionMap.get(userId));
-        UUID friendId = queue.poll();
+        UUID friendId;
+        Set<UUID> rejectionSet;
+        do {
+            friendId = queue.poll();
+            if (friendId == null)
+                break;
+            rejectionSet = rejectionMap.get(friendId);
+        } while (rejectionSet != null && rejectionSet.contains(userId));
         return ServerHelper.getSession(friendId);
     }
 
     public void reject(UUID userId, UUID rejectUserId) {
-        if (!rejectionMap.containsKey(userId)) {
-            Set<UUID> rejectionSet = new HashSet<>();
-            rejectionSet.add(rejectUserId);
-            rejectionMap.put(userId, rejectionSet);
-            return;
-        }
-        rejectionMap.get(userId).add(rejectUserId);
+        rejectionMap.computeIfAbsent(userId, uuid -> new HashSet<>())
+                .add(rejectUserId);
     }
 
     public boolean registerRoom(ChatRoom room) {
-        Stream<UserSession> stream = room.getMembers().stream();
+        Set<UserSession> users = room.getMembers();
         synchronized (available) {
-            if (stream.anyMatch(user -> !available.contains(user.getUid()) && !user.isOnline()))
-                return false;
-            Set<UUID> memberIds = stream.map(User::getUid).collect(Collectors.toSet());
-            available.removeAll(memberIds);
+            for (UserSession user : users) {
+                if (!available.contains(user.getUid()) && !user.isOnline())
+                    return false;
+            }
+            users.forEach(user -> {
+                available.remove(user.getUid());
+                user.joinRoom(room);
+            });
         }
-        stream.forEach(user -> user.joinRoom(room));
         rooms.add(room);
         return true;
     }
 
     public Optional<ChatRoom> leaveRoom(UserSession user) {
         ChatRoom room = user.getRoom();
+        if (room == null)
+            return Optional.empty();
         user.leaveRoom();
         room.remove(user);
         if (rooms.contains(room)) {
@@ -62,8 +67,12 @@ public class ChatManager {
         available.add(userId);
     }
 
-    public void quitQueue(UUID userId) {
-        available.remove(userId);
+    public boolean quitQueue(UUID userId) {
+        return available.remove(userId);
+    }
+
+    public boolean isInQueue(UUID userId) {
+        return available.contains(userId);
     }
 
 }

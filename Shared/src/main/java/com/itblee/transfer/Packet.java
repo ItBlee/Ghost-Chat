@@ -1,21 +1,26 @@
 package com.itblee.transfer;
 
+import com.itblee.utils.JsonParser;
+
 import java.io.Serializable;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 public class Packet implements Serializable, Cloneable {
-    private Header header;
+    private Request request;
     private StatusCode code;
     private String message;
-    private final Map<DataKey, Object> body = new HashMap<>();
+    private final Map<DataKey, String> data = new HashMap<>();
 
-    public Header getHeader() {
-        return header;
+    public Request getHeader() {
+        return request;
     }
 
-    public void setHeader(Header header) {
-        this.header = header;
+    public void setHeader(Request request) {
+        this.request = request;
     }
 
     public StatusCode getCode() {
@@ -34,26 +39,40 @@ public class Packet implements Serializable, Cloneable {
         this.message = message;
     }
 
-    public <T> T get(DataKey key) {
-        return (T) body.get(key);
+    public String get(DataKey key) {
+        return data.get(key);
+    }
+
+    public <T> Optional<T> get(DataKey key, Class<T> tClass) {
+        return JsonParser.fromJson(get(key), tClass);
+    }
+
+    public <T> Optional<T> get(DataKey key, Type type) {
+        return JsonParser.fromJson(get(key), type);
     }
 
     public void putData(DataKey key, Object value) {
-        body.put(key, value);
+        if (value instanceof CharSequence || value instanceof UUID)
+            data.put(key, value.toString());
+        else data.put(key, JsonParser.toJson(value));
+    }
+
+    public void putData(DataKey key, Object value, Type type) {
+        data.put(key, JsonParser.toJson(value, type));
     }
 
     public boolean is(StatusCode code) {
         return this.code == code;
     }
 
-    public boolean is(Header header) {
-        return this.header == header;
+    public boolean is(Request request) {
+        return this.request == request;
     }
 
     public Packet clear() {
-        header = null;
+        request = null;
         code = null;
-        body.clear();
+        data.clear();
         message = null;
         return this;
     }

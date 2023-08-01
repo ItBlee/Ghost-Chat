@@ -1,6 +1,7 @@
 package com.itblee.core.Impl;
 
 import com.itblee.core.Connector;
+import com.itblee.utils.PropertyUtil;
 import org.openeuler.com.sun.net.ssl.internal.ssl.Provider;
 
 import javax.net.SocketFactory;
@@ -20,8 +21,7 @@ public class SecureConnector extends ConnectorImpl implements Connector {
     }
 
     public SecureConnector(String ip, int port, String password) {
-        this(ip, port, password, SECURE_SOCKET_TIMEOUT);
-
+        this(ip, port, password, PropertyUtil.getInt("socket.auth.timeout"));
     }
 
     public SecureConnector(String ip, int port, String password, int timeout) {
@@ -43,7 +43,8 @@ public class SecureConnector extends ConnectorImpl implements Connector {
 
     private void addProvider() {
         java.security.Security.addProvider(new Provider());
-        System.setProperty("javax.net.ssl.trustStore", TRUST_STORE_PATH);
+        String trustStorePath = RESOURCE_PATH + PropertyUtil.getString("jsse.truststore.path");
+        System.setProperty("javax.net.ssl.trustStore", trustStorePath);
         System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
         if (SSL_DEBUG_ENABLE)
             System.setProperty("javax.net.debug","all");

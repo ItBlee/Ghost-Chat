@@ -4,7 +4,7 @@ import java.util.ResourceBundle;
 
 public final class PropertyUtil {
 
-    private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("Server.properties");
+    private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("Server");
 
     public PropertyUtil() {
         throw new AssertionError();
