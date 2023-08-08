@@ -1,6 +1,5 @@
 package com.itblee.gui.page;
 
-import com.itblee.core.Client;
 import com.itblee.core.helper.ClientHelper;
 import com.itblee.core.helper.TransferHelper;
 import com.itblee.core.Worker;

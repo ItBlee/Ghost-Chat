@@ -1,8 +1,9 @@
 package com.itblee.core.helper;
 
-import com.itblee.core.Impl.UserSession;
+import com.itblee.core.ServerContainer;
+import com.itblee.core.User;
 import com.itblee.repository.document.Log;
-import com.itblee.security.User;
+import com.itblee.security.Session;
 
 import java.util.Date;
 import java.util.Objects;
@@ -21,8 +22,12 @@ public final class LoggerHelper {
         return LOGGERS.get().getLog();
     }
 
-    public static LogOwner log(UserSession user) {
+    public static LogOwner log(User user) {
         return LOGGERS.get().setTarget(user);
+    }
+
+    public static LogOwner log(Session session) {
+        return LOGGERS.get().setTarget(session);
     }
 
     public static Log breakConnect(String ip) {
@@ -111,23 +116,31 @@ public final class LoggerHelper {
     }
 
     public static class LogOwner {
-        private UserSession target;
+        private User target;
+        private Session session;
 
-        private LogOwner setTarget(UserSession target) {
+        private LogOwner setTarget(User target) {
             this.target = Objects.requireNonNull(target);
+            this.session = target.getSession();
+            return this;
+        }
+
+        private LogOwner setTarget(Session session) {
+            this.session = Objects.requireNonNull(session);
+            target = null;
             return this;
         }
 
         private Log getLog() {
-            /*log.setId(null);
-            log.setCreatedDate(null);
-            log.setModifiedDate(null);
-            log.setUid(null);
-            log.setUsername(null);
-            log.setContact(null);
-            log.setAction(null);
-            log.setDetail(null);
-            log.setStatus(null);*/
+            /*record.setId(null);
+            record.setCreatedDate(null);
+            record.setModifiedDate(null);
+            record.setUid(null);
+            record.setUsername(null);
+            record.setContact(null);
+            record.setAction(null);
+            record.setDetail(null);
+            record.setStatus(null);*/
             return new Log();
         }
 
@@ -136,7 +149,9 @@ public final class LoggerHelper {
             log.setUid(target.getUid().toString());
             log.setStatus(1);
             log.setCreatedDate(new Date());
-            target.log(log);
+            if (target != null)
+                ServerContainer.logger.log(target, log);
+            else ServerContainer.logger.log(session, log);
         }
 
         public void breakConnect() {

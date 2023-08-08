@@ -309,7 +309,7 @@ public class ChatPage extends AbstractPane {
             message.setSentDate(DateUtil.dateToString(now));
             TransferHelper.sendMessage(message);
             Packet serverRsp = ClientHelper.await();
-            if (serverRsp.is(StatusCode.CREATED))
+            if (serverRsp.is(DefaultStatusCode.CREATED))
                 appendMessage(ChatUtil.renderSendMsg(input, now));
             else appendMessage(ChatUtil.renderSendMsgFail(input, now));
         } catch (IOException | InterruptedException ex) {

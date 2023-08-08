@@ -1,27 +1,25 @@
 package com.itblee.core;
 
-import com.itblee.core.Impl.UserSession;
-
 import java.util.*;
 
 public class ChatRoom {
     private final UUID roomId;
-    private final Set<UserSession> members;
+    private final Set<User> members;
 
     public ChatRoom() {
         roomId = UUID.randomUUID();
         members = Collections.synchronizedSet(new HashSet<>());
     }
 
-    public void add(UserSession user) {
+    public void add(User user) {
         members.add(user);
     }
 
-    public void addAll(Collection<UserSession> users) {
+    public void addAll(Collection<User> users) {
         members.addAll(users);
     }
 
-    public void remove(UserSession user) {
+    public void remove(User user) {
         members.remove(user);
     }
 
@@ -33,7 +31,7 @@ public class ChatRoom {
         return roomId;
     }
 
-    public Set<UserSession> getMembers() {
+    public Set<User> getMembers() {
         return members;
     }
 

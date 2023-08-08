@@ -1,6 +1,6 @@
 package com.itblee.gui;
 
-import com.itblee.core.Impl.UserSession;
+import com.itblee.core.User;
 import com.itblee.utils.Converter;
 
 import javax.swing.*;
@@ -57,19 +57,19 @@ public class UserListTable extends JScrollPane {
         setPreferredSize(new Dimension(903,400));
     }
 
-    public void fillData(Collection<UserSession> users) {
+    public void fillData(Collection<User> users) {
         model.setRowCount(0);
         Object[] rowData = new Object[8];
-        for (UserSession user : users) {
+        for (User user : users) {
             rowData[0] = model.getRowCount() + 1;
             rowData[1] = user.getUsername();
             rowData[2] = user.getUid();
             rowData[3] = user.getIp();
             if (rowData[3] == null)
                 rowData[3] = "Disconnected";
-            rowData[4] = user.getSecretKey();
+            rowData[4] = user.getSession().getSecretKey();
             try {
-                long milliseconds = System.currentTimeMillis() - user.getLatestAccessTime();
+                long milliseconds = System.currentTimeMillis() - user.getSession().getLatestAccessTime();
                 if (milliseconds >= 0)
                     rowData[5] = Converter.convertTime(milliseconds);
             } catch (Exception e) {

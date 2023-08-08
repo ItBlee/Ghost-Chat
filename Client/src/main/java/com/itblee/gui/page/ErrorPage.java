@@ -1,6 +1,6 @@
 package com.itblee.gui.page;
 
-import com.itblee.core.Client;
+import com.itblee.core.ClientContainer;
 import com.itblee.gui.Alert;
 import com.itblee.gui.ClientFrame;
 import com.itblee.gui.component.AbstractPane;
@@ -53,9 +53,8 @@ public class ErrorPage extends AbstractPane {
         icon.setVisible(true);
         new Thread(() -> {
             try {
-                Client client = Client.getInstance();
-                client.getConnection();
-                client.getFrame().showLogin();
+                ClientContainer.client.getConnection();
+                ClientContainer.frame.showLogin();
             } catch (IOException ignored) {
             } catch (InterruptedException e) {
                 Alert.showError("Got Error !");

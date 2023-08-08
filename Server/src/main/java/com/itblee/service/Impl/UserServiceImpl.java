@@ -4,7 +4,7 @@ import com.itblee.exception.*;
 import com.itblee.repository.Impl.UserRepositoryImpl;
 import com.itblee.repository.UserRepository;
 import com.itblee.repository.document.UserDetail;
-import com.itblee.security.HashUtil;
+import com.itblee.security.HashApplier;
 import com.itblee.service.UserService;
 import com.itblee.utils.ValidateUtil;
 import com.mongodb.client.FindIterable;
@@ -43,7 +43,7 @@ public class UserServiceImpl implements UserService {
             throw new NotFoundException();
         if (userDetail.getStatus() == 0)
             throw new ForbiddenException();
-        String hash = HashUtil.applySha256(password, userDetail.getPasswordSalt());
+        String hash = HashApplier.applySha256(password, userDetail.getPasswordSalt());
         if (!hash.equals(userDetail.getPasswordHash()))
             throw new BadRequestException();
         return userDetail;
@@ -57,8 +57,8 @@ public class UserServiceImpl implements UserService {
             throw new InvalidPasswordException("Invalid password !");
         if (findByUsername(username).isPresent())
             throw new UserExistException("Username already exist !");
-        String salt = HashUtil.getSalt();
-        String hash = HashUtil.applySha256(password, salt);
+        String salt = HashApplier.getSalt();
+        String hash = HashApplier.applySha256(password, salt);
         UserDetail userDetail = new UserDetail();
         userDetail.setId(new ObjectId());
         userDetail.setUsername(username);
@@ -82,8 +82,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void resetPassword(String username) throws NotFoundException {
-        String salt = HashUtil.getSalt();
-        String hash = HashUtil.applySha256(DEFAULT_PASSWORD, salt);
+        String salt = HashApplier.getSalt();
+        String hash = HashApplier.applySha256(DEFAULT_PASSWORD, salt);
         changePassword(username, hash, salt);
     }
 

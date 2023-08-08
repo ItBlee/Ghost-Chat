@@ -1,15 +1,10 @@
 package com.itblee.gui;
 
-import com.itblee.core.Server;
-import com.itblee.security.HashUtil;
-
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
 import java.awt.*;
-import java.io.IOException;
 
 import static com.itblee.constant.Resource.ICON;
-import static com.itblee.constant.ServerConstant.*;
 
 public class LauncherFrame extends JFrame {
 
@@ -51,8 +46,8 @@ public class LauncherFrame extends JFrame {
     }
 
     private void verify() {
-        String password = String.valueOf(pfPassword.getPassword());
-        String hash = HashUtil.applySha256(password, KEY_STORE_PWD_SALT);
+        /*String password = String.valueOf(pfPassword.getPassword());
+        String hash = HashApplier.applySha256(password, KEY_STORE_PWD_SALT);
         if (!hash.equals(KEY_STORE_PWD_HASH)) {
             pfPassword.setText("");
             lblPassword.setText("Wrong! ");
@@ -60,11 +55,11 @@ public class LauncherFrame extends JFrame {
             try {
                 dispose();
                 EventQueue.invokeLater(() -> new ServerManagerFrame().setVisible(true));
-                Server.getInstance().launch(password);
+                ServerContainer.server.launch(password);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        }*/
     }
 
     JLabel lblPassword;

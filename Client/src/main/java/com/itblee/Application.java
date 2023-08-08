@@ -1,7 +1,9 @@
 package com.itblee;
 
 import com.formdev.flatlaf.FlatIntelliJLaf;
-import com.itblee.core.Client;
+import com.itblee.core.ClientContainer;
+import com.itblee.core.MyClient;
+import com.itblee.core.User;
 import com.itblee.gui.Alert;
 import com.itblee.gui.ClientFrame;
 
@@ -11,9 +13,11 @@ import java.awt.*;
 public class Application {
 
     public static void main(String[] args) {
+        ClientContainer.client = MyClient.init();
+        ClientContainer.user = new User();
         setupTheme();
         ClientFrame frame = new ClientFrame();
-        Client.init(frame);
+        ClientContainer.frame = frame;
         frame.showLoading();
         EventQueue.invokeLater(() -> frame.setVisible(true));
         frame.loadLogin();
