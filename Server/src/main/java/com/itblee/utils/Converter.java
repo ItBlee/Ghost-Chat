@@ -1,6 +1,6 @@
 package com.itblee.utils;
 
-import com.itblee.core.Impl.UserSession;
+import com.itblee.core.User;
 import com.itblee.model.Message;
 import com.itblee.repository.document.Log;
 import com.itblee.repository.document.UserDetail;
@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Converter {
 
-    public static UserSession convertUser(UserDetail src, UserSession des) {
+    public static User convertUser(UserDetail src, User des) {
         des.setUsername(src.getUsername());
         if (src.getStatus() == 0)
             des.ban();

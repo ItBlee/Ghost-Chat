@@ -1,6 +1,6 @@
 package com.itblee.gui.component;
 
-import com.itblee.core.function.Choice;
+import com.itblee.utils.function.Choosable;
 import com.itblee.utils.PropertyUtil;
 
 import javax.swing.*;
@@ -17,7 +17,7 @@ public class Dialog extends JDialog {
 
 	public static class Builder {
 		private JFrame owner;
-		private Choice choice;
+		private Choosable choosable;
 		private String message = "ALERT";
 		private boolean isAlert = false;
 		private AnimatedImage icon = new AnimatedImage(null);
@@ -35,8 +35,8 @@ public class Dialog extends JDialog {
 			return this;
 		}
 
-		public Builder reply(Choice choice) {
-			this.choice = choice;
+		public Builder reply(Choosable choosable) {
+			this.choosable = choosable;
 			return this;
 		}
 
@@ -63,7 +63,7 @@ public class Dialog extends JDialog {
 		public Dialog build() {
 			Objects.requireNonNull(owner);
 			Objects.requireNonNull(message);
-			if (choice == null)
+			if (choosable == null)
 				isAlert = true;
 			return new Dialog(this);
 		}
@@ -74,7 +74,7 @@ public class Dialog extends JDialog {
 		this.owner = builder.owner;
 		this.message = builder.message;
 		this.isAlert = builder.isAlert;
-		this.choice = builder.choice;
+		this.choosable = builder.choosable;
 		this.icon = builder.icon;
 		this.fontColor = builder.fontColor;
 		this.acceptTitle = builder.acceptTitle;
@@ -186,9 +186,9 @@ public class Dialog extends JDialog {
 
 	private void onClickAccept() {
 		exit();
-		if (choice != null) {
+		if (choosable != null) {
 			try {
-				choice.reply(true);
+				choosable.reply(true);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -197,9 +197,9 @@ public class Dialog extends JDialog {
 
 	private void onClickDecline() {
 		exit();
-		if (choice != null) {
+		if (choosable != null) {
 			try {
-				choice.reply(false);
+				choosable.reply(false);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -224,7 +224,7 @@ public class Dialog extends JDialog {
 		timer.start();
 	}
 
-	private final Choice choice;
+	private final Choosable choosable;
 	private final JFrame owner;
 	private final String message;
 	private final AnimatedImage icon;

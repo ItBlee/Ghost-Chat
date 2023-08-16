@@ -23,6 +23,13 @@
 
     <dependencies>
         <dependency>
+            <artifactId>com.itblee</artifactId>
+            <groupId>client-server-framework</groupId>
+            <scope>system</scope>
+            <version>1.0</version>
+            <systemPath>${project.basedir}/libs/Client-Server-Framework-1.0.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>org.openeuler</groupId>
             <artifactId>jsse</artifactId>
             <version>${jsse.version}</version>

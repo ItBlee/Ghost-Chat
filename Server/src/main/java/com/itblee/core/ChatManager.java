@@ -1,8 +1,5 @@
 package com.itblee.core;
 
-import com.itblee.core.Impl.UserSession;
-import com.itblee.core.helper.ServerHelper;
-
 import java.util.*;
 
 public class ChatManager {
@@ -13,7 +10,7 @@ public class ChatManager {
 
     private final Map<UUID, Set<UUID>> rejectionMap = Collections.synchronizedMap(new HashMap<>());
 
-    public Optional<UserSession> findFriendFor(UUID userId) {
+    public Optional<UUID> findFriendFor(UUID userId) {
         Queue<UUID> queue = new LinkedList<>(available);
         if (rejectionMap.containsKey(userId))
             queue.removeAll(rejectionMap.get(userId));
@@ -25,7 +22,7 @@ public class ChatManager {
                 break;
             rejectionSet = rejectionMap.get(friendId);
         } while (rejectionSet != null && rejectionSet.contains(userId));
-        return ServerHelper.getSession(friendId);
+        return Optional.ofNullable(friendId);
     }
 
     public void reject(UUID userId, UUID rejectUserId) {
@@ -34,9 +31,9 @@ public class ChatManager {
     }
 
     public boolean registerRoom(ChatRoom room) {
-        Set<UserSession> users = room.getMembers();
+        Set<User> users = room.getMembers();
         synchronized (available) {
-            for (UserSession user : users) {
+            for (User user : users) {
                 if (!available.contains(user.getUid()) && !user.isOnline())
                     return false;
             }
@@ -49,7 +46,7 @@ public class ChatManager {
         return true;
     }
 
-    public Optional<ChatRoom> leaveRoom(UserSession user) {
+    public Optional<ChatRoom> leaveRoom(User user) {
         ChatRoom room = user.getRoom();
         if (room == null)
             return Optional.empty();

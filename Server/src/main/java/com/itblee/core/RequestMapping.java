@@ -1,31 +1,24 @@
 package com.itblee.core;
 
-import com.itblee.core.Impl.UserSession;
-import com.itblee.core.helper.ServerHelper;
 import com.itblee.core.helper.TransferHelper;
 import com.itblee.exception.UnauthenticatedException;
 import com.itblee.model.Message;
-import com.itblee.transfer.DataKey;
-import com.itblee.transfer.Request;
-import com.itblee.transfer.StatusCode;
+import com.itblee.transfer.*;
 
 import java.util.Optional;
-import java.util.UUID;
 
 public final class RequestMapping {
 
     static final Controller CONNECT = new Controller() {{
-        ServerService service = ServerHelper.getService();
 
-        map(Request.BREAK_CONNECT, (worker, data) -> service.breakConnection(worker));
-
-        map(Request.AUTH_LOGIN, (worker, data) -> {
-            String username = data.get(DataKey.USERNAME);
-            String password = data.get(DataKey.PASSWORD);
-            StatusCode code = service.login(worker.getUid(), username, password);
+        map(MyRequest.AUTH_LOGIN, (worker, data) -> {
+            MyServerService service = ServerContainer.serverService;
+            String username = data.get(MyDataKey.USERNAME);
+            String password = data.get(MyDataKey.PASSWORD);
+            DefaultStatusCode code = service.login(worker.getUid(), username, password);
             switch (code) {
                 case OK:
-                    TransferHelper.call(worker).responseLogin(username, StatusCode.OK);
+                    TransferHelper.call(worker).responseLogin(username, DefaultStatusCode.OK);
                     break;
                 case CONFLICT:
                 case FORBIDDEN:
@@ -36,13 +29,14 @@ public final class RequestMapping {
             }
         });
 
-        map(Request.AUTH_REGISTER, (worker, data) -> {
-            String username = data.get(DataKey.USERNAME);
-            String password = data.get(DataKey.PASSWORD);
-            StatusCode code = service.register(worker.getUid(), username, password);
+        map(MyRequest.AUTH_REGISTER, (worker, data) -> {
+            MyServerService service = ServerContainer.serverService;
+            String username = data.get(MyDataKey.USERNAME);
+            String password = data.get(MyDataKey.PASSWORD);
+            DefaultStatusCode code = service.register(worker.getUid(), username, password);
             switch (code) {
                 case CREATED:
-                    TransferHelper.call(worker).responseRegister(username, StatusCode.CREATED);
+                    TransferHelper.call(worker).responseRegister(username, DefaultStatusCode.CREATED);
                     break;
                 case CONFLICT:
                 case BAD_REQUEST:
@@ -53,7 +47,8 @@ public final class RequestMapping {
             }
         });
 
-        map(Request.AUTH_LOGOUT, (worker, data) -> {
+        map(MyRequest.AUTH_LOGOUT, (worker, data) -> {
+            MyServerService service = ServerContainer.serverService;
             try {
                 service.logout(worker.getUid());
             } catch (UnauthenticatedException e) {
@@ -61,7 +56,8 @@ public final class RequestMapping {
             }
         });
 
-        map(Request.FIND_CHAT, (worker, data) -> {
+        map(MyRequest.FIND_CHAT, (worker, data) -> {
+            MyServerService service = ServerContainer.serverService;
             try {
                 service.findChatFor(worker.getUid());
             } catch (UnauthenticatedException e) {
@@ -69,7 +65,8 @@ public final class RequestMapping {
             }
         });
 
-        map(Request.STOP_FIND, (worker, data) -> {
+        map(MyRequest.STOP_FIND, (worker, data) -> {
+            MyServerService service = ServerContainer.serverService;
             try {
                 service.stopFindChat(worker.getUid());
                 worker.complete(data);
@@ -79,11 +76,12 @@ public final class RequestMapping {
             }
         });
 
-        map(Request.INVITE_CHAT, Worker::complete);
+        map(MyRequest.INVITE_CHAT, Worker::complete);
 
-        map(Request.CONFIRM_CHAT, Worker::complete);
+        map(MyRequest.CONFIRM_CHAT, Worker::complete);
 
-        map(Request.LEAVE_CHAT, (worker, data) -> {
+        map(MyRequest.LEAVE_CHAT, (worker, data) -> {
+            MyServerService service = ServerContainer.serverService;
             try {
                 service.leaveChat(worker.getUid());
             } catch (UnauthenticatedException e) {
@@ -91,10 +89,11 @@ public final class RequestMapping {
             }
         });
 
-        map(Request.SEND_MESSAGE, (worker, data) -> {
-            Optional<Message> message = data.get(DataKey.MESSAGE_BODY, Message.class);
+        map(MyRequest.SEND_MESSAGE, (worker, data) -> {
+            Optional<Message> message = data.get(MyDataKey.MESSAGE_BODY, Message.class);
             if (!message.isPresent())
                 return;
+            MyServerService service = ServerContainer.serverService;
             try {
                 service.syncMessage(worker.getUid(), message.get());
             } catch (UnauthenticatedException e) {
@@ -102,36 +101,6 @@ public final class RequestMapping {
             }
         });
 
-        lock();
-    }};
-
-    static final Controller SSL = new Controller() {{
-        ServerService service = ServerHelper.getService();
-
-        map(Request.BREAK_CONNECT, (worker, data) -> worker.close());
-
-        map(Request.SESSION, (worker, data) -> {
-            String secretKey = data.get(DataKey.SECRET_KEY);
-            try {
-                UserSession session = service.createSession(secretKey);
-                TransferHelper.call(worker).responseSession(session.getUid(), StatusCode.CREATED);
-                worker.close();
-            } catch (IllegalArgumentException e) {
-                TransferHelper.call(worker).responseSession(StatusCode.BAD_REQUEST);
-            }
-        });
-
-        map(Request.SESSION_KEY, (worker, data) -> {
-            String stringId = data.get(DataKey.SESSION_ID);
-            String secretKey = data.get(DataKey.SECRET_KEY);
-            UUID uid = UUID.fromString(stringId);
-            if (service.changeSessionKey(uid, secretKey)) {
-                TransferHelper.call(worker).responseChangeKey(StatusCode.OK);
-                worker.close();
-            } else TransferHelper.call(worker).responseSession(StatusCode.BAD_REQUEST);
-        });
-
-        lock();
     }};
 
 }

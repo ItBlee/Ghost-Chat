@@ -2,7 +2,7 @@ package com.itblee.gui;
 
 import com.itblee.gui.component.Dialog;
 import com.itblee.core.helper.ClientHelper;
-import com.itblee.core.function.Choice;
+import com.itblee.utils.function.Choosable;
 import com.itblee.utils.IconUtil;
 import com.itblee.utils.StringUtil;
 
@@ -16,7 +16,7 @@ public class Alert {
     private static final ImageIcon[] IMAGE_DIALOG_CONFIRM = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/confirm");
     private static final ImageIcon[] IMAGE_DIALOG_DECLINE = IconUtil.loadSequence(RESOURCE_PATH + "images/dialog/decline");
 
-    public static void showInvite(String message, Choice choice) {
+    public static void showInvite(String message, Choosable choosable) {
         String content = StringUtil.applyWrapForGUI(message);
         Dialog.builder()
                 .setOwner(ClientHelper.getFrame())
@@ -24,7 +24,7 @@ public class Alert {
                 .setIcon(IMAGE_DIALOG_INVITE)
                 .setAcceptTitle("INVITE")
                 .setDeclineTitle("IGNORE")
-                .reply(choice)
+                .reply(choosable)
                 .build()
                 .display();
     }
@@ -40,7 +40,7 @@ public class Alert {
                 .display();
     }
 
-    public static void showConfirm(String message, Choice choice) {
+    public static void showConfirm(String message, Choosable choosable) {
         String content = StringUtil.applyWrapForGUI(message);
         Dialog.builder()
                 .setOwner(ClientHelper.getFrame())
@@ -48,7 +48,7 @@ public class Alert {
                 .setIcon(IMAGE_DIALOG_CONFIRM)
                 .setAcceptTitle("ACCEPT")
                 .setDeclineTitle("DECLINE")
-                .reply(choice)
+                .reply(choosable)
                 .build()
                 .display();
     }
@@ -57,14 +57,14 @@ public class Alert {
         showError(message, null);
     }
 
-    public static void showError(String message, Choice choice) {
+    public static void showError(String message, Choosable choosable) {
         String content = StringUtil.applyWrapForGUI(message);
         Dialog.builder()
                 .setOwner(ClientHelper.getFrame())
                 .setMessage(content)
                 .setIcon(IMAGE_DIALOG_DECLINE)
                 .setAcceptTitle("GOT IT")
-                .reply(choice)
+                .reply(choosable)
                 .build()
                 .display();
     }

@@ -1,11 +1,11 @@
 package com.itblee.gui;
 
-import com.itblee.core.Impl.UserSession;
-import com.itblee.core.Server;
-import com.itblee.core.ServerService;
-import com.itblee.core.helper.ServerHelper;
+import com.itblee.core.ServerContainer;
+import com.itblee.core.User;
+import com.itblee.core.MyServerService;
 import com.itblee.exception.NotFoundException;
 import com.itblee.repository.document.Log;
+import com.itblee.security.Session;
 import com.itblee.utils.PropertyUtil;
 import com.itblee.utils.StringUtil;
 
@@ -14,7 +14,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +36,7 @@ public class ServerManagerFrame extends JFrame {
     private int tutorialSelected;
 
     private boolean lock = false;
-    private UserSession selectedUser;
+    private User selectedUser;
 
     public ServerManagerFrame() {
         initComponents();
@@ -87,7 +86,7 @@ public class ServerManagerFrame extends JFrame {
         lbAlert.setText("");
         lbAlert.setHorizontalAlignment(SwingConstants.CENTER);
 
-        jLabel2.setText("To User:");
+        jLabel2.setText("To Session:");
 
         btnCheck.setIcon(new ImageIcon(RESOURCE_PATH + "images/check_icon.png"));
         btnCheck.setFocusPainted(false);
@@ -258,7 +257,7 @@ public class ServerManagerFrame extends JFrame {
     }
 
     private void showUserList(ActionEvent evt) {
-        List<UserSession> users = ServerHelper.getService().getUsers();
+        List<User> users = ServerContainer.serverService.getUsers();
         if (users.isEmpty()) {
             JOptionPane.showMessageDialog(this,"There are currently no users !","Empty", JOptionPane.ERROR_MESSAGE);
             return;
@@ -266,7 +265,7 @@ public class ServerManagerFrame extends JFrame {
         if (userTable == null)
             userTable = new UserListTable();
         userTable.fillData(users);
-        int result = JOptionPane.showConfirmDialog(this, userTable, "User List", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(this, userTable, "Session List", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.YES_OPTION && userTable.getSelectedRow() != -1) {
             selectedUser = users.get(userTable.getSelectedRow());
             applyUser();
@@ -276,24 +275,24 @@ public class ServerManagerFrame extends JFrame {
     private void execute(ActionEvent evt) {
         if (messageArea.getText().isEmpty() || messageArea.getText().equalsIgnoreCase(getTutorialText()))
             return;
-        ServerService service = ServerHelper.getService();
+        MyServerService service = ServerContainer.serverService;
 
         if (!messageArea.getText().startsWith("#")) {
             try {
-                service.sendAlert(selectedUser, messageArea.getText());
+                service.sendAlert(selectedUser.getSession(), messageArea.getText());
                 lbAlert.setText("SENT");
             } catch (Exception e) {
-                lbAlert.setText("User not connected !");
+                lbAlert.setText("Session not connected !");
             }
             return;
         }
 
         String command = messageArea.getText();
         if (command.toUpperCase().startsWith("#ALL")) {
-            for (UserSession user : ServerHelper.getUserManager().getSessions()) {
+            for (Session session : ServerContainer.userManager.getSessions()) {
                 String message = command.trim().replaceAll("(?i)#all ", "");
                 try {
-                    service.sendAlert(user, message);
+                    service.sendAlert(session, message);
                 } catch (Exception ignored) {}
             }
             lbAlert.setText("SENT ALL");
@@ -336,7 +335,7 @@ public class ServerManagerFrame extends JFrame {
                 lbAlert.setText("STOPPED!");
                 break;
             case "#SESSION":
-                service.renewSessionTimer(selectedUser);
+                service.renewSessionTimer(selectedUser.getSession());
                 lbAlert.setText("RENEW");
                 break;
             case "#PWD":
@@ -354,7 +353,7 @@ public class ServerManagerFrame extends JFrame {
     }
 
     private void showUserLogs(ActionEvent evt) {
-        Collection<Log> logs = ServerHelper.getLogger().getUserLogs(selectedUser.getUsername());
+        Collection<Log> logs = ServerContainer.logger.getUserLogs(selectedUser.getUsername());
         if (logs.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "Currently no history !",
@@ -370,12 +369,12 @@ public class ServerManagerFrame extends JFrame {
 
     private void search() {
         String input = txtSearch.getText();
-        Optional<UserSession> found = ServerHelper.getService().searchByName(input);
+        Optional<User> found = ServerContainer.serverService.searchByName(input);
         if (found.isPresent()) {
             selectedUser = found.get();
             applyUser();
         } else {
-            jLabel2.setText("To User: NOT FOUND");
+            jLabel2.setText("To Session: NOT FOUND");
             txtSearch.setBackground(new Color(231, 76, 60));
             tutorialSelected = TUTORIAL_COMMON;
             messageArea.setText(getTutorialText());
@@ -386,7 +385,7 @@ public class ServerManagerFrame extends JFrame {
     private void reset() {
         if (lock)
             return;
-        jLabel2.setText("To User: unchecked");
+        jLabel2.setText("To Session: unchecked");
         txtSearch.setBackground(Color.white);
         txtSearch.setForeground(Color.black);
         messageArea.setForeground(new Color(142, 142, 142));
@@ -402,7 +401,7 @@ public class ServerManagerFrame extends JFrame {
         lock = true;
         lbAlert.setText("");
         StringBuilder s = new StringBuilder();
-        s.append("To User: ");
+        s.append("To Session: ");
         if (selectedUser.getUid() != null)
             s.append(selectedUser.getUid());
         if (selectedUser.getIp() != null)
@@ -445,7 +444,8 @@ public class ServerManagerFrame extends JFrame {
     @Override
     public void dispose() {
         try {
-            Server.getInstance().shutdown();
+            ServerContainer.serverService.recordAllLogs();
+            ServerContainer.server.shutdown();
         } catch (Exception ignored) {}
         super.dispose();
     }

@@ -1,7 +1,5 @@
 package com.itblee.utils;
 
-import com.itblee.security.Certificate;
-
 public final class ValidateUtil {
 
     public ValidateUtil() {
@@ -15,12 +13,6 @@ public final class ValidateUtil {
 
     public static boolean isValidPassword(String password) {
         return StringUtil.isNotBlank(password);
-    }
-
-    public static boolean isValidCertificate(Certificate certificate) {
-        return certificate != null
-                && certificate.getUid() != null
-                && StringUtil.isNotBlank(certificate.getSecretKey());
     }
 
 }

@@ -8,6 +8,7 @@ import com.itblee.gui.ClientFrame;
 import com.itblee.gui.component.AbstractPane;
 import com.itblee.transfer.Packet;
 import com.itblee.utils.IconUtil;
+import com.itblee.utils.PropertyUtil;
 import com.itblee.utils.StringUtil;
 import com.itblee.utils.ValidateUtil;
 
@@ -20,7 +21,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 
-import static com.itblee.constant.ClientConstant.REQUEST_TIMEOUT;
 import static com.itblee.constant.ClientConstant.RESOURCE_PATH;
 import static com.itblee.constant.Resource.*;
 
@@ -259,7 +259,7 @@ public class LoginPage extends AbstractPane {
             String temp = btnLogin.getText();
             String[] arr = {"●", "●●", "●●●", "●●●●", "●●●●●"};
             int i = 0;
-            long timeout = REQUEST_TIMEOUT;
+            long timeout = PropertyUtil.getInt("request.timeout");
             while (timeout > 0 && worker.isListening()) {
                 btnLogin.setText(arr[i]);
                 if (i == 4) i = 0;
