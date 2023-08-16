@@ -59,7 +59,7 @@ public class MyServerService extends ServerService {
         try {
             leaveChat(session.getUid());
             logout(session.getUid());
-        } catch (UnauthenticatedException ignored) {}
+        } catch (Exception ignored) {}
         //LoggerHelper.log(session).breakConnect();
     }
 
